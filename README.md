@@ -26,6 +26,16 @@ for the first time, install `reticulate` and run the `check_and_install()`
 function from the `deepregression` package. This tries to install miniconda, TF
 2.10.0, TFP 0.16 and keras 2.8.0.
 
+# Reproducing the results
+
+1. Install dependencies via `make dependencies` or sourcing `dependencies.R`
+
+2. Preprocess the `movies` data with `make data` or sourcing `movies.R`
+
+3. Reproduce the results via `make repro` or sourcing `code.R`
+
+Simply run `make all` for all of the above.
+
 # Troubleshooting
 
 See
