@@ -49,10 +49,60 @@ The data `movies.csv` is licensed under CC0 and available in raw form from
 
 # How to cite deeptrafo
 
-For methodology, please cite
+For methodology please cite an appropriate selection of:
+
+1. Deep conditional transformation models
 
 ```
+@InProceedings{baumann2020deep,
+  doi = {10.1007/978-3-030-86523-8\_1},
+  year = {2021},
+  publisher = {Springer International Publishing},
+  pages = {3--18},
+  author = {Philipp F. M. Baumann and Torsten Hothorn and David R\"{u}gamer},
+  title = {Deep Conditional Transformation Models},
+  booktitle = {Machine Learning and Knowledge Discovery in Databases. Research Track}
+}
+```
 
+2. Probabilistic time series forecasts with autoregressive transformation models
+
+```
+@article{rugamer2021timeseries,
+  doi = {10.48550/arXiv.2110.08248},
+  year = {2021},
+  journal = {arXiv preprint},
+  note = {To appear in \emph{Statistics \& Computing}},
+  author = {David R\"ugamer and Philipp FM Baumann and Thomas Kneib and Torsten Hothorn},
+  title = {Probabilistic Time Series Forecasts with Autoregressive Transformation Models}
+}
+```
+
+3. Ordinal neural network transformation models
+
+```
+@article{kook2020ordinal,
+  doi = {10.1016/j.patcog.2021.108263},
+  year = {2022},
+  publisher = {Elsevier {BV}},
+  volume = {122},
+  pages = {108263},
+  author = {Lucas Kook and Lisa Herzog and Torsten Hothorn and Oliver D\"{u}rr and Beate Sick},
+  title = {Deep and interpretable regression models for ordinal outcomes},
+  journal = {Pattern Recognition}
+}
+```
+
+4. Transformation ensembles
+
+```
+@article{kook2022deep,
+  title={Deep interpretable ensembles},
+  author={Kook, Lucas and G{\"o}tschi, Andrea and Baumann, Philipp FM and Hothorn, Torsten and Sick, Beate},
+  journal={arXiv preprint arXiv:2205.12729},
+  year={{2022}},
+  doi={10.48550/arXiv.2205.12729}
+}
 ```
 
 When using the software, please cite
