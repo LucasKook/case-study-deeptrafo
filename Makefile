@@ -5,9 +5,9 @@ data: dependencies
 	Rscript movies.R
 
 repro: data
-	Rscript code.R
+	(R CMD BATCH --vanilla code.R &)
 
 all: dependencies data repro
 
 clean:
-	rm -rf *.RDS *.pdf
+	rm -rf *.RDS *.pdf *.Rout
