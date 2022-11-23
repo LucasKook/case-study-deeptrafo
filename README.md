@@ -54,6 +54,18 @@ For methodology please cite an appropriate selection of:
 1. Deep conditional transformation models
 
 ```
+@inproceedings{sick2020deep,
+doi = {10.1109/icpr48806.2021.9413177},
+year = {2021},
+publisher = {{IEEE}},
+author = {Beate Sick and Torsten Hothorn and Oliver D\"urr},
+title = {Deep transformation models: Tackling complex regression problems with
+neural network based transformation models},
+booktitle = {2020 25th International Conference on Pattern Recognition ({ICPR})}
+}
+```
+
+```
 @InProceedings{baumann2020deep,
   doi = {10.1007/978-3-030-86523-8\_1},
   year = {2021},
