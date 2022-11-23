@@ -3,7 +3,7 @@
 This repository contains code for reproducing the results in
 [arXiv:...](https://arxiv.org/abs/...) using the R package `deeptrafo` with
 stable version available on [CRAN](https://CRAN.R-project.org/package=deeptrafo)
-and development version at
+and development version on
 [GitHub](https://github.com/neural-structured-additive-learning/deeptrafo).
 
 # Installation
