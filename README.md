@@ -20,28 +20,22 @@ for the stable version from CRAN.
 
 # Requirements
 
-The requirements are given in the `DESCRIPTION`. If the package is loaded
-manually using `devtools::load_all()`, make sure the following packages are
-availabe:
-
-  - `Matrix`
-  - `dplyr`
-  - `keras`
-  - `mgcv`
-  - `reticulate`
-  - `tensorflow`
-  - `tfprobability`
-  - `deepregression`
-
-If you set up a Python environment for the first time, install `reticulate` and
-run the `check_and_install()` function from the `deepregression` package. This
-tries to install miniconda, TF 2.10.0, TFP 0.16 and keras 2.8.0.
+The requirements are given in the `dependencies.R` file and can be installed by
+sourcing the R script or `make dependencies`. If you set up a Python environment
+for the first time, install `reticulate` and run the `check_and_install()`
+function from the `deepregression` package. This tries to install miniconda, TF
+2.10.0, TFP 0.16 and keras 2.8.0.
 
 # Troubleshooting
 
 See
 [here](https://github.com/neural-structured-additive-learning/deepregression/blob/main/README.md#troubleshooting)
 for troubleshooting your Python/R installation.
+
+# Movies data
+
+The data `movies.csv` is licensed under CC0 and available in raw form from
+[kaggle](https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset).
 
 # How to cite deeptrafo
 
