@@ -33,9 +33,9 @@ theme_set(theme_bw() + theme(legend.position = "top"))
 # Params ------------------------------------------------------------------
 
 bpath <- "."
-nr_words <- 10000
-embedding_size <- 100
-maxlen <- 100
+nr_words <- 1e4
+embedding_size <- 1e2
+maxlen <- 1e2
 order_bsp <- 25
 repetitions <- 2
 
