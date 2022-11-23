@@ -73,22 +73,22 @@ unlist(coef(m_fm, which = "shifting"))
 
 
 ## ----plot-hist, fig.width=8.1, fig.height=4.05, eval=!ATMonly-----------------
-p1 <- data.frame(x = 1:hist_m_fm$params$epochs, 
+p1 <- data.frame(x = 1:hist_m_fm$params$epochs,
                  training = hist_m_fm$metrics$loss,
-                 validation = hist_m_fm$metrics$val_loss) |> 
-  tidyr::gather("set", "loss", training, validation) |> 
+                 validation = hist_m_fm$metrics$val_loss) |>
+  tidyr::gather("set", "loss", training, validation) |>
   ggplot(aes(x = x, y = loss, color = set)) +
   geom_line() +
   scale_color_brewer(palette = "Dark2") +
   labs(x = "epochs", color = "")
-  
-nd <- list(genreAction = c(0, 1), budget = rep(mean(train$budget), 2), 
+
+nd <- list(genreAction = c(0, 1), budget = rep(mean(train$budget), 2),
            popularity = rep(mean(train$popularity), 2))
 preds <- predict(m_fm, newdata = nd, q = seq(0, 2000, 25), type = "trafo")
 pdat <- data.frame(y = as.numeric(names(preds)),
                    ga0 = unlist(lapply(preds, \(x) x[1, 1])),
                    ga1 = unlist(lapply(preds, \(x) x[2, 1])))
-p2 <- pdat |> tidyr::gather("action", "trafo", ga0, ga1) |> 
+p2 <- pdat |> tidyr::gather("action", "trafo", ga0, ga1) |>
   ggplot(aes(x = y, y = trafo, color = action)) +
   geom_step() +
   labs(x = "vote count", y = "transformation", color = "genreAction") +
@@ -107,10 +107,10 @@ embd_mod <- function(x) x |>
   layer_lstm(units = 50, return_sequences = TRUE) |>
   layer_lstm(units = 50, return_sequences = FALSE) |>
   layer_dropout(rate = 0.1) |>
-  layer_dense(25) |> 
-  layer_dropout(rate = 0.2) |> 
-  layer_dense(5) |> 
-  layer_dropout(rate = 0.3) |> 
+  layer_dense(25) |>
+  layer_dropout(rate = 0.2) |>
+  layer_dense(5) |>
+  layer_dropout(rate = 0.3) |>
   layer_dense(1)
 
 fm_deep <- update(fm, . ~ . + deep(texts))
@@ -171,15 +171,15 @@ test$action <- ordered(test$genreAction, levels = levels(train$action))
 ## ----embd_mod-----------------------------------------------------------------
 make_keras_model <- function() {
   return(
-    keras_model_sequential(name = "embd")  |> 
+    keras_model_sequential(name = "embd")  |>
       layer_embedding(input_dim = nr_words, output_dim = embedding_size) |>
-      layer_lstm(units = 50, return_sequences = TRUE)  |> 
-      layer_lstm(units = 50, return_sequences = FALSE)  |> 
+      layer_lstm(units = 50, return_sequences = TRUE)  |>
+      layer_lstm(units = 50, return_sequences = FALSE)  |>
       layer_dropout(rate = 0.1) |>
-      layer_dense(25)  |>  
-      layer_dropout(rate = 0.2)  |> 
-      layer_dense(5, name = "penultimate")  |> 
-      layer_dropout(rate = 0.3) |> 
+      layer_dense(25)  |>
+      layer_dropout(rate = 0.2)  |>
+      layer_dense(5, name = "penultimate")  |>
+      layer_dropout(rate = 0.3) |>
       layer_dense(1)
   )
 }
@@ -223,8 +223,8 @@ optimizer <- function(model) {
     tuple(optimizer_adam(learning_rate = 1e-2),
     get_layer(model, "ia_1__2")),
     tuple(optimizer_adam(learning_rate = 1e-2),
-    get_layer(model, "popularity_3")), 
-    tuple(optimizer_adam(learning_rate = 1e-4), 
+    get_layer(model, "popularity_3")),
+    tuple(optimizer_adam(learning_rate = 1e-4),
     get_layer(model, "embd")))
   multioptimizer(optimizers_and_layers)
 }
@@ -246,11 +246,11 @@ bci <- function(mod) {
    c("nll" = mean(lli), "lwr" = btci[1], "upr" = btci[2])
 }
 
-mods <- list("unconditional" = m_0, "tabular only" = m_tab, 
+mods <- list("unconditional" = m_0, "tabular only" = m_tab,
   "text only" = m_text, "semi-structured" = m_semi)
 do.call("cbind", lapply(mods, bci))
 
-c("tabular only" = unlist(unname(coef(m_tab))), 
+c("tabular only" = unlist(unname(coef(m_tab))),
   "semi-structured" = unlist(unname(coef(m_semi))))
 
 
@@ -260,9 +260,9 @@ d_sorted <- d[order(d, decreasing = TRUE)]
 nw <- as.integer(names(d_sorted[1:1e3]))
 
 mod <- keras_model(embd$layers[[1]]$input, get_layer(
-  embd, "embedding")$output)
+  embd, "embedding_1")$output)
 number_words_per_movie <- 100
-inp <- texts_to_sequences(tokenizer, words$word[nw]) |> 
+inp <- texts_to_sequences(tokenizer, words$word[nw]) |>
   pad_sequences(maxlen = number_words_per_movie, truncating = "post")
 dat <- mod(inp)$numpy()
 
@@ -302,7 +302,7 @@ df2 <- data.frame(
     "Neither", "Action", "Romance"))
 )
 
-gp2 <- ggplot(df2, aes(x = PC1, y = PC2, col = genres, size = genres)) + 
+gp2 <- ggplot(df2, aes(x = PC1, y = PC2, col = genres, size = genres)) +
   geom_point() +
   scale_color_manual(values = c("gray", "red", "blue")) +
   scale_size_manual(values = 1.3 * c(0.3, 1, 1)) +
@@ -351,7 +351,7 @@ mods <- lapply(list(fm_atm, fm_atp, fm_colr), mod_fun)
 
 fit_fun <- \(m) m |> fit(epochs = ep, callbacks = list(
   callback_early_stopping(patience = 50, monitor = "loss"),
-  callback_reduce_lr_on_plateau(patience = 20, factor = 0.9, monitor = "loss")), 
+  callback_reduce_lr_on_plateau(patience = 20, factor = 0.9, monitor = "loss")),
   batch_size = nrow(d_ts), validation_split = 0, verbose = FALSE)
 
 lapply(mods, \(m) {
@@ -373,13 +373,13 @@ m_atm <- mods[[1]]
 m_atp <- mods[[2]]
 m_colr <- mods[[3]]
 
-nd <- ndt <-  d_ts |> dplyr::mutate(y_true = y, y = list(gr)) |> 
+nd <- ndt <-  d_ts |> dplyr::mutate(y_true = y, y = list(gr)) |>
   tidyr::unnest(y)
 nd$d_atp <- c(predict(m_atp, newdata = nd, type = "pdf"))
 nd$d_atm <- c(predict(m_atm, newdata = nd, type = "pdf"))
 nd$d_colr <- c(predict(m_colr, newdata = nd, type = "pdf"))
-d_density <- nd |> 
-  tidyr::gather("method", "y_density", d_atm, d_atp, d_colr) |> 
+d_density <- nd |>
+  tidyr::gather("method", "y_density", d_atm, d_atp, d_colr) |>
   dplyr::mutate(y_grid = y) |> as.data.table()
 
 # In-sample trafos
@@ -392,22 +392,22 @@ ndt$t_colr <- c(predict(m_colr, newdata = ndt, type = "trafo"))
 d_sub_dens <- d_density[time %in% t_idx]
 
 Sys.setlocale("LC_ALL", "en_GB.UTF-8")
-g_dens <- ggplot() + 
-  geom_path(data = d_sub_dens, aes(x = y_true, y = time, group = method), 
+g_dens <- ggplot() +
+  geom_path(data = d_sub_dens, aes(x = y_true, y = time, group = method),
             colour="red", size=1.5, alpha = 0.2) +
-  geom_point(data = d_sub_dens, aes(x = y_true, y = time, group = method), 
+  geom_point(data = d_sub_dens, aes(x = y_true, y = time, group = method),
              colour="red", size=1, shape=4) +
-  geom_joy(data = d_sub_dens, 
-           aes(height = y_density, x = y_grid, y = time, 
-               group = time, fill = factor(time)), 
+  geom_joy(data = d_sub_dens,
+           aes(height = y_density, x = y_grid, y = time,
+               group = time, fill = factor(time)),
            stat="identity", alpha = 0.7, colour = rgb(0,0,0,0.5)) +
-  scale_y_date(date_breaks = "4 months", date_labels = "%b %Y") + 
+  scale_y_date(date_breaks = "4 months", date_labels = "%b %Y") +
   scale_fill_viridis_d() +
   guides(fill = guide_legend(nrow = 2)) +
-  facet_grid(~ method, labeller = as_labeller(c("d_atp" = paste0("AT(", p, ")"), 
+  facet_grid(~ method, labeller = as_labeller(c("d_atp" = paste0("AT(", p, ")"),
                                               "d_atm" = "ATM",
-                                              "d_colr" = "Colr"))) + 
-  theme_bw() + 
+                                              "d_colr" = "Colr"))) +
+  theme_bw() +
   labs(color = "month") +
   xlab("") +
   ylab("") +
@@ -419,23 +419,23 @@ g_dens <- ggplot() +
         legend.position = "none",
         rect = element_rect(fill = "transparent"))
 
-trafos <- ndt |> 
-  tidyr::gather("method", "h", t_atm, t_atp, t_colr) |> 
-  dplyr::filter(time %in% t_idx) |> 
+trafos <- ndt |>
+  tidyr::gather("method", "h", t_atm, t_atp, t_colr) |>
+  dplyr::filter(time %in% t_idx) |>
   dplyr::mutate(month = ordered(
     format(as.Date(time), format = "%b %Y"),
     levels = format(sort(unique(as.Date(time))), format = "%b %Y")))
 
-g_trafo <- ggplot(trafos) + 
+g_trafo <- ggplot(trafos) +
     geom_line(aes(x = y, y = h, color = month)) +
-    theme_set(theme_bw() + theme(legend.position = "bottom")) + 
+    theme_set(theme_bw() + theme(legend.position = "bottom")) +
     facet_grid(~ method, labeller = as_labeller(
       c("t_atm" = "ATM", "t_atp" = paste0("AT(", p, ")"), "t_colr" = "Colr"))) +
-    ylab(expression(hat(h)(y[t]*"|"*Y[p] *"="* y[p]))) + 
+    ylab(expression(hat(h)(y[t]*"|"*Y[p] *"="* y[p]))) +
     xlab(expression(y[t])) +
-    scale_x_continuous(expand = c(0,0), breaks = c(15, 20, 25)) + 
+    scale_x_continuous(expand = c(0,0), breaks = c(15, 20, 25)) +
     guides(color = guide_legend(nrow = 2)) +
-    theme(text = element_text(size=12), legend.position = "bottom") + 
+    theme(text = element_text(size=12), legend.position = "bottom") +
     xlab("Mean maximum temperature (°C) in Melbourne") +
     theme(strip.background = element_blank(), strip.text.x = element_blank()) +
     scale_colour_viridis_d()
@@ -461,7 +461,7 @@ args(weight_control)
 ## ----warmstart-and-fix-weights-shift-2, eval=!ATMonly-------------------------
 data("wine", package = "ordinal")
 mw <- deeptrafo(rating ~ 0 + temp, data = wine,
-  weight_options = weight_control(warmstart_weights = list(list(), list(), 
+  weight_options = weight_control(warmstart_weights = list(list(), list(),
   list("temp" = 0))))
 unlist(coef(mw))
 
@@ -510,7 +510,7 @@ abs(unlist(coef(m)) - coef(Lm(y ~ x, data = d)))
 
 
 ## ----alternative-interface, eval=!ATMonly-------------------------------------
-dord <- data.frame(Y = ordered(sample.int(6, 100, TRUE)), 
+dord <- data.frame(Y = ordered(sample.int(6, 100, TRUE)),
   X = rnorm(100), Z = rnorm(100))
 ontram(response = ~ Y, intercept = ~ X, shift = ~ 0 + s(Z, df = 3),
   data = dord)
@@ -526,7 +526,7 @@ d <- data.frame(Y = Y, X = X)
 m <- LmNN(Y ~ 0 + fac(X), data = d, additional_processor = list(
   fac = fac_processor), optimizer = optimizer_adam(learning_rate = 1e-2))
 fit(m, batch_size = 1e4, epochs = 20, validation_split = 0, callbacks = list(
-  callback_early_stopping("loss", patience = 3), 
+  callback_early_stopping("loss", patience = 3),
   callback_reduce_lr_on_plateau("loss", 0.9, 2)), verbose = FALSE)
 bl <- unlist(coef(m, which = "interacting"))
 - (unlist(coef(m))[1:5] + bl[1]) / bl[2]
