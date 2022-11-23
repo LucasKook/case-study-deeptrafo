@@ -47,7 +47,7 @@ for troubleshooting your Python/R installation.
 The data `movies.csv` is licensed under CC0 and available in raw form from
 [kaggle](https://www.kaggle.com/datasets/rounakbanik/the-movies-dataset).
 
-# How to cite deeptrafo
+# How to cite `deeptrafo`
 
 For methodology please cite an appropriate selection of:
 
