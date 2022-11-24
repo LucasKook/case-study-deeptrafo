@@ -124,7 +124,7 @@ fit(m_deep, epochs = 50, validation_split = 0.1, batch_size = 32,
 
 ## ----ensembling-dctms, eval=!ATMonly------------------------------------------
 ens_deep <- ensemble(m_deep, n_ensemble = 3, epochs = 50, batch_size = 64,
-  verbose = FALSE, seed = 1:3)
+  verbose = FALSE)
 
 
 ## ----ensembling-dctms-methods, eval=!ATMonly----------------------------------
