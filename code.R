@@ -100,6 +100,7 @@ ggpubr::ggarrange(
   common.legend = FALSE
 )
 
+ggsave("plot-hist.pdf", width = 8.1, height = 4.05)
 
 ## ----working-with-neural-networks, eval=!ATMonly------------------------------
 embd_mod <- function(x) x |>
@@ -144,6 +145,7 @@ nd <- data.frame(
 
 
 ## ----ensembling-dctms-plot, eval=!ATMonly-------------------------------------
+pdf("ensembling-dctms-plot.pdf", height = 4.5 * 0.8, width = 6.5 * 0.8)
 plot(pdat$value, pdat$V2, type = "l", ylim = range(pdat[, -1]),
      xlab = "log(1 + bugdet)", ylab = "partial effect", col = "gray80", lty = 2)
 matlines(pdat$value, pdat[, -1:-2], col = "gray80", lty = 2)
@@ -156,11 +158,14 @@ polygon(c(nd$value, rev(nd$value)),
 
 legend("topright", legend = c("ensemble", "individual"), lty = c(1, 2),
        col = c(1, "gray80"), lwd = 1, bty = "n")
+dev.off()
 
 
 ## ----cross-validating-dctms, fig.width=9, fig.height=4.05, eval=!ATMonly------
 cv_deep <- cv(m_deep, epochs = 50, cv_folds = 5, batch_size = 64)
+pdf("cross-validating-dctms.pdf", height = 4.5 * 0.8, width = 6.5 * 0.8)
 plot_cv(cv_deep)
+dev.off()
 
 
 ## ----preproc-ontram-----------------------------------------------------------
@@ -356,7 +361,7 @@ fit_fun <- \(m) m |> fit(epochs = ep, callbacks = list(
 
 lapply(mods, \(m) {
   mhist <- fit_fun(m)
-  plot(mhist)
+  # plot(mhist)
 })
 
 
@@ -442,6 +447,7 @@ g_trafo <- ggplot(trafos) +
 
 (p1 <- g_dens / g_trafo)
 
+ggsave("plot-ATMs.pdf", p1, width = 10.8, height = 8.1)
 
 ## ----handling-censored-responses, eval=!ATMonly-------------------------------
 deeptrafo:::response(y = c(0L, 1L))
