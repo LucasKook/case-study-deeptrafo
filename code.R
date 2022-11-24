@@ -91,7 +91,7 @@ pdat <- data.frame(y = as.numeric(names(preds)),
 p2 <- pdat |> tidyr::gather("action", "trafo", ga0, ga1) |>
   ggplot(aes(x = y, y = trafo, color = action)) +
   geom_step() +
-  labs(x = "vote count", y = "transformation", color = "genreAction") +
+  labs(x = "vote count", y = "transformation function", color = "genreAction") +
   scale_color_manual(values = colorspace::diverging_hcl(2),
                      labels = c("ga0" = 0, "ga1" = 1))
 
