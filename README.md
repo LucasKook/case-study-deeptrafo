@@ -55,13 +55,13 @@ For methodology please cite an appropriate selection of:
 
 ```
 @inproceedings{sick2020deep,
-doi = {10.1109/icpr48806.2021.9413177},
-year = {2021},
-publisher = {{IEEE}},
-author = {Beate Sick and Torsten Hothorn and Oliver D\"urr},
-title = {Deep transformation models: Tackling complex regression problems with
-neural network based transformation models},
-booktitle = {2020 25th International Conference on Pattern Recognition ({ICPR})}
+  doi = {10.1109/icpr48806.2021.9413177},
+  year = {2021},
+  publisher = {{IEEE}},
+  author = {Beate Sick and Torsten Hothorn and Oliver D\"urr},
+  title = {Deep transformation models: Tackling complex regression problems with
+  neural network based transformation models},
+  booktitle = {2020 25th International Conference on Pattern Recognition ({ICPR})}
 }
 ```
 
@@ -85,7 +85,7 @@ booktitle = {2020 25th International Conference on Pattern Recognition ({ICPR})}
   year = {2021},
   journal = {arXiv preprint},
   note = {To appear in \emph{Statistics \& Computing}},
-  author = {David R\"ugamer and Philipp FM Baumann and Thomas Kneib and Torsten Hothorn},
+  author = {David R\"ugamer and Philipp F. M. Baumann and Thomas Kneib and Torsten Hothorn},
   title = {Probabilistic Time Series Forecasts with Autoregressive Transformation Models}
 }
 ```
@@ -110,7 +110,7 @@ booktitle = {2020 25th International Conference on Pattern Recognition ({ICPR})}
 ```
 @article{kook2022deep,
   title={Deep interpretable ensembles},
-  author={Kook, Lucas and G{\"o}tschi, Andrea and Baumann, Philipp FM and Hothorn, Torsten and Sick, Beate},
+  author={Kook, Lucas and G{\"o}tschi, Andrea and Baumann, Philipp F. M. and Hothorn, Torsten and Sick, Beate},
   journal={arXiv preprint arXiv:2205.12729},
   year={{2022}},
   doi={10.48550/arXiv.2205.12729}
@@ -122,7 +122,7 @@ When using the software, please cite
 ```
 @article{kook2022estimating,
   title={Estimating Conditional Distributions with Neural Networks using R package deeptrafo},
-  author={Kook, Lucas and Baumann, Philipp FM and D{\"u}rr, Oliver and Sick, Beate and R{\"u}gamer, David},
+  author={Kook, Lucas and Baumann, Philipp F. M. and D{\"u}rr, Oliver and Sick, Beate and R{\"u}gamer, David},
   journal={arXiv preprint arXiv:2211.13665},
   year={2022},
   doi={10.48550/arXiv.2211.13665}
