@@ -1,10 +1,11 @@
 # Install dependencies
+# TODO: Update GitHub commit numbers
 
-packages <- c("Matrix", "boot", "data.table", "data.table", "dplyr", "ggjoy",
+packages <- c("Matrix", "boot", "data.table", "data.table", "dplyr", "ggridges",
               "ggplot2", "ggrepel", "ggsci", "jsonlite", "keras", "knitr",
               "lubridate", "mgcv", "moments", "patchwork", "reticulate",
               "tensorflow", "tfprobability", "tidytext", "tidyverse", "tm",
-              "tram", "remotes", "ordinal")
+              "tram", "remotes", "ordinal", "ggpubr")
 
 new_pkg <- packages[!(packages %in% installed.packages()[,"Package"])]
 if(length(new_pkg)) install.packages(new_pkg)

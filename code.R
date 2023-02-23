@@ -509,7 +509,7 @@ d <- data.frame(y = 1 + rnorm(1e3), x = rnorm(1e3))
 m <- deeptrafo(y ~ 0 + x, data = d, trafo_options = tfc,
                optimizer = optimizer_adam(learning_rate = 1e-2),
                latent_distr = "normal")
-fit(m, batch_size = 1e3, epochs = 1e3, validation_split = NULL,
+fit(m, batch_size = 1e3, epochs = 3e3, validation_split = NULL,
     callbacks = list(callback_reduce_lr_on_plateau(monitor = "loss")),
     verbose = FALSE)
 abs(unlist(coef(m)) - coef(Lm(y ~ x, data = d)))
