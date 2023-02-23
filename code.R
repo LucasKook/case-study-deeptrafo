@@ -67,15 +67,15 @@ opt <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
 
 
 ## ----fitting-dctms, eval=!ATMonly---------------------------------------------
-hist_m_fm <- fit(m_fm, epochs = 1e3, validation_split = 0.1, batch_size = 64,
+m_fm_hist <- fit(m_fm, epochs = 1e3, validation_split = 0.1, batch_size = 64,
   verbose = FALSE)
 unlist(coef(m_fm, which = "shifting"))
 
 
 ## ----plot-hist, fig.width=8.1, fig.height=4.05, eval=!ATMonly-----------------
-p1 <- data.frame(x = 1:hist_m_fm$params$epochs,
-                 training = hist_m_fm$metrics$loss,
-                 validation = hist_m_fm$metrics$val_loss) |>
+p1 <- data.frame(x = 1:m_fm_hist$params$epochs,
+                 training = m_fm_hist$metrics$loss,
+                 validation = m_fm_hist$metrics$val_loss) |>
   tidyr::gather("set", "loss", training, validation) |>
   ggplot(aes(x = x, y = loss, color = set)) +
   geom_line() +
@@ -118,7 +118,7 @@ fm_deep <- update(fm, . ~ . + deep(texts))
 m_deep <- deeptrafo(fm_deep, data = train,
   list_of_deep_models = list(deep = embd_mod))
 
-dhist <- fit(m_deep, epochs = 50, validation_split = 0.1, batch_size = 32,
+fit(m_deep, epochs = 50, validation_split = 0.1, batch_size = 32,
   callbacks = list(callback_early_stopping(patience = 5)), verbose = FALSE)
 
 
