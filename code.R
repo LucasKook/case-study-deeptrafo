@@ -1,27 +1,36 @@
+################################################################################
+################################################################################
+# Replication material for "Estimating conditional distributions with Neural
+# Networks using R package deeptrafo" by Lucas Kook, Philipp FM Baumann, Oliver
+# Duerr, Beate Sick, and David Ruegamer.
+################################################################################
+################################################################################
+
+# Dependencies can be installed via the separately provided `dependencies.R`
+# file
+
 ## ----include=FALSE------------------------------------------------------------
 library("knitr")
 opts_chunk$set(engine = "R", tidy = FALSE, prompt = TRUE, cache = FALSE,
-               fig.width = 6.5 * 0.8, fig.height = 4.5 * 0.8, fig.fullwidth = TRUE,
-               fig.path = "Figures/", fig.ext = c("pdf", "eps", "jpg", "tiff"),
-               dpi = 600)
+               fig.width = 6.5 * 0.8, fig.height = 4.5 * 0.8, 
+               fig.fullwidth = TRUE, fig.path = "Figures/", 
+               fig.ext = c("pdf", "eps", "jpg", "tiff"), dpi = 600)
 knitr::render_sweave()  # use Sweave environments
 knitr::set_header(highlight = "")  # do not \usepackage{Sweave}
 ## R settings
 options(prompt = "R> ", continue = "+  ", width = 76, useFancyQuotes = FALSE,
         digits = 3L)
 
-
 ## ----preliminaries, echo = FALSE, results = "hide", message=FALSE-------------
 library("deeptrafo")
 library("ggplot2")
-# devtools::install_github("FinYang/tsdl") # for tsdl data set
-library("tsdl")
+library("tsdl") # available from GitHub (FinYang/tsdl)
 library("reticulate")
 library("safareg")
 library("data.table")
 library("ggplot2")
 library("patchwork")
-library("ggjoy")
+library("ggridges")
 library("moments")
 library("lubridate")
 library("boot")
@@ -45,7 +54,6 @@ if (!file.exists("data_splitted.RDS"))
 
 ATMonly <- FALSE
 
-
 ## ----data, eval=!ATMonly------------------------------------------------------
 data_list <- readRDS(file.path(bpath, "data_splitted.RDS"))[[1]]
 train <- data_list[[1]]
@@ -68,7 +76,7 @@ opt <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
 
 ## ----fitting-dctms, eval=!ATMonly---------------------------------------------
 m_fm_hist <- fit(m_fm, epochs = 1e3, validation_split = 0.1, batch_size = 64,
-  verbose = FALSE)
+                 verbose = FALSE)
 unlist(coef(m_fm, which = "shifting"))
 
 
@@ -116,20 +124,19 @@ embd_mod <- function(x) x |>
 
 fm_deep <- update(fm, . ~ . + deep(texts))
 m_deep <- deeptrafo(fm_deep, data = train,
-  list_of_deep_models = list(deep = embd_mod))
+                    list_of_deep_models = list(deep = embd_mod))
 
 fit(m_deep, epochs = 50, validation_split = 0.1, batch_size = 32,
-  callbacks = list(callback_early_stopping(patience = 5)), verbose = FALSE)
+    callbacks = list(callback_early_stopping(patience = 5)), verbose = FALSE)
 
 
 ## ----ensembling-dctms, eval=!ATMonly------------------------------------------
 ens_deep <- ensemble(m_deep, n_ensemble = 3, epochs = 50, batch_size = 64,
-  verbose = FALSE)
+                     verbose = FALSE)
 
 
 ## ----ensembling-dctms-methods, eval=!ATMonly----------------------------------
-logLik(ens_deep, newdata = test, convert_fun = mean)
-
+logLik(ens_deep, newdata = test, convert_fun = \(x) - mean(x))
 
 ## ----ensembling-dctms-plot-prereq, eval=!ATMonly------------------------------
 d <- deeptrafo:::.call_for_all_members(
@@ -201,8 +208,8 @@ fm_semi <- action ~ 0 + popularity + deep(texts)
 ### unconditional ####
 m_0 <- PolrNN(fm_0, data = train, optimizer = optimizer_adam(
   learning_rate = 1e-2, decay = 1e-4), weight_options = weight_control(
-  general_weight_options = list(trainable = FALSE, use_bias = FALSE),
-  warmstart_weights = list(list(), list(), list("1" = 0))))
+    general_weight_options = list(trainable = FALSE, use_bias = FALSE),
+    warmstart_weights = list(list(), list(), list("1" = 0))))
 fit(m_0, epochs = 3e3, validation_split = 0, batch_size = length(
   train$action), verbose = FALSE)
 
@@ -210,7 +217,7 @@ fit(m_0, epochs = 3e3, validation_split = 0, batch_size = length(
 m_tab <- PolrNN(fm_tab, data = train, optimizer = optimizer_adam(
   learning_rate = 0.1, decay = 1e-4))
 fit(m_tab, epochs = 1e3, batch_size = length(train$action),
-  validation_split = 0, verbose = FALSE)
+    validation_split = 0, verbose = FALSE)
 exp(-unlist(coef(m_tab, which = "shifting")))
 
 ### only text ####
@@ -226,11 +233,11 @@ embd_semi <- make_keras_model()
 optimizer <- function(model) {
   optimizers_and_layers <- list(
     tuple(optimizer_adam(learning_rate = 1e-2),
-    get_layer(model, "ia_1__2")),
+          get_layer(model, "ia_1__2")),
     tuple(optimizer_adam(learning_rate = 1e-2),
-    get_layer(model, "popularity_3")),
+          get_layer(model, "popularity_3")),
     tuple(optimizer_adam(learning_rate = 1e-4),
-    get_layer(model, "embd")))
+          get_layer(model, "embd")))
   multioptimizer(optimizers_and_layers)
 }
 m_semi <- PolrNN(fm_semi, data = train, list_of_deep_models = list(
@@ -241,18 +248,18 @@ fit(m_semi, epochs = 10, callbacks = list(callback_early_stopping(
 
 ## ----mods-comparison-ontram---------------------------------------------------
 all.equal(unname(unlist(coef(m_0, which = "interacting"))),
-  qlogis(mean(train$action == 0)), tol = 1e-6)
+          qlogis(mean(train$action == 0)), tol = 1e-6)
 
 # compare test prediction performance
 bci <- function(mod) {
-   lli <- logLik(mod, newdata = test, convert_fun = identity)
-   bt <- boot(lli, statistic = \(x, d) mean(x[d]), R = 1e4)
-   btci <- boot.ci(bt, conf = 0.95, type = "perc")$percent[1, 4:5]
-   c("nll" = mean(lli), "lwr" = btci[1], "upr" = btci[2])
+  lli <- logLik(mod, newdata = test, convert_fun = identity)
+  bt <- boot(lli, statistic = \(x, d) mean(x[d]), R = 1e4)
+  btci <- boot.ci(bt, conf = 0.95, type = "perc")$percent[1, 4:5]
+  c("nll" = mean(lli), "lwr" = btci[1], "upr" = btci[2])
 }
 
 mods <- list("unconditional" = m_0, "tabular only" = m_tab,
-  "text only" = m_text, "semi-structured" = m_semi)
+             "text only" = m_text, "semi-structured" = m_semi)
 do.call("cbind", lapply(mods, bci))
 
 c("tabular only" = unlist(unname(coef(m_tab))),
@@ -286,7 +293,7 @@ topN <- 100
 gp1 <- ggplot(df, aes(x = PC1, y = PC2)) + geom_point(size = 0.2, col = "gray") +
   geom_point(data = df[1:topN, ], aes(x = PC1, y = PC2), size = 0.2, col = "black") +
   geom_text_repel(data = df[1:topN, ], aes(x = PC1, y = PC2, label = words),
-                           size = rel(3.5), max.overlaps = 20) +
+                  size = rel(3.5), max.overlaps = 20) +
   theme_bw() + labs(subtitle = paste0(topN, " most frequent words"))
 
 ##### PCA of embedding from m_text ####
@@ -410,8 +417,8 @@ g_dens <- ggplot() +
   scale_fill_viridis_d() +
   guides(fill = guide_legend(nrow = 2)) +
   facet_grid(~ method, labeller = as_labeller(c("d_atp" = paste0("AT(", p, ")"),
-                                              "d_atm" = "ATM",
-                                              "d_colr" = "Colr"))) +
+                                                "d_atm" = "ATM",
+                                                "d_colr" = "Colr"))) +
   theme_bw() +
   labs(color = "month") +
   xlab("") +
@@ -432,18 +439,18 @@ trafos <- ndt |>
     levels = format(sort(unique(as.Date(time))), format = "%b %Y")))
 
 g_trafo <- ggplot(trafos) +
-    geom_line(aes(x = y, y = h, color = month)) +
-    theme_set(theme_bw() + theme(legend.position = "bottom")) +
-    facet_grid(~ method, labeller = as_labeller(
-      c("t_atm" = "ATM", "t_atp" = paste0("AT(", p, ")"), "t_colr" = "Colr"))) +
-    ylab(expression(hat(h)(y[t]*"|"*Y[p] *"="* y[p]))) +
-    xlab(expression(y[t])) +
-    scale_x_continuous(expand = c(0,0), breaks = c(15, 20, 25)) +
-    guides(color = guide_legend(nrow = 2)) +
-    theme(text = element_text(size=12), legend.position = "bottom") +
-    xlab("Mean maximum temperature (°C) in Melbourne") +
-    theme(strip.background = element_blank(), strip.text.x = element_blank()) +
-    scale_colour_viridis_d()
+  geom_line(aes(x = y, y = h, color = month)) +
+  theme_set(theme_bw() + theme(legend.position = "bottom")) +
+  facet_grid(~ method, labeller = as_labeller(
+    c("t_atm" = "ATM", "t_atp" = paste0("AT(", p, ")"), "t_colr" = "Colr"))) +
+  ylab(expression(hat(h)(y[t]*"|"*Y[p] *"="* y[p]))) +
+  xlab(expression(y[t])) +
+  scale_x_continuous(expand = c(0,0), breaks = c(15, 20, 25)) +
+  guides(color = guide_legend(nrow = 2)) +
+  theme(text = element_text(size=12), legend.position = "bottom") +
+  xlab("Mean maximum temperature (°C) in Melbourne") +
+  theme(strip.background = element_blank(), strip.text.x = element_blank()) +
+  scale_colour_viridis_d()
 
 (p1 <- g_dens / g_trafo)
 
@@ -456,7 +463,7 @@ deeptrafo:::response(y = c(0L, 1L))
 ## ----warmstart-and-fix-weights-shift, eval=!ATMonly---------------------------
 nn <- keras_model_sequential() |>
   layer_dense(input_shape = 1L, units = 3L, activation = "relu",
-  use_bias = FALSE, kernel_initializer = initializer_constant(value = 1))
+              use_bias = FALSE, kernel_initializer = initializer_constant(value = 1))
 unlist(get_weights(nn))
 
 
@@ -467,8 +474,8 @@ args(weight_control)
 ## ----warmstart-and-fix-weights-shift-2, eval=!ATMonly-------------------------
 data("wine", package = "ordinal")
 mw <- deeptrafo(rating ~ 0 + temp, data = wine,
-  weight_options = weight_control(warmstart_weights = list(list(), list(),
-  list("temp" = 0))))
+                weight_options = weight_control(warmstart_weights = list(list(), list(),
+                                                                         list("temp" = 0))))
 unlist(coef(mw))
 
 
@@ -517,9 +524,9 @@ abs(unlist(coef(m)) - coef(Lm(y ~ x, data = d)))
 
 ## ----alternative-interface, eval=!ATMonly-------------------------------------
 dord <- data.frame(Y = ordered(sample.int(6, 100, TRUE)),
-  X = rnorm(100), Z = rnorm(100))
+                   X = rnorm(100), Z = rnorm(100))
 ontram(response = ~ Y, intercept = ~ X, shift = ~ 0 + s(Z, df = 3),
-  data = dord)
+       data = dord)
 
 
 ## ----large-factor-models------------------------------------------------------
@@ -536,4 +543,4 @@ fit(m, batch_size = 1e4, epochs = 20, validation_split = 0, callbacks = list(
   callback_reduce_lr_on_plateau("loss", 0.9, 2)), verbose = FALSE)
 bl <- unlist(coef(m, which = "interacting"))
 - (unlist(coef(m))[1:5] + bl[1]) / bl[2]
-
+logLik(m, batch_size = 1e4, convert_fun = \(x) - mean(x))
