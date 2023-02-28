@@ -28,7 +28,6 @@ library("tsdl") # available from GitHub (FinYang/tsdl)
 library("reticulate")
 library("safareg")
 library("data.table")
-library("ggplot2")
 library("patchwork")
 library("ggridges")
 library("moments")
@@ -88,7 +87,8 @@ p1 <- data.frame(x = 1:m_fm_hist$params$epochs,
   ggplot(aes(x = x, y = loss, color = set)) +
   geom_line() +
   scale_color_brewer(palette = "Dark2") +
-  labs(x = "epochs", color = "")
+  labs(x = "epochs", color = "") +
+  theme(text = element_text(size = 13))
 
 nd <- list(genreAction = c(0, 1), budget = rep(mean(train$budget), 2),
            popularity = rep(mean(train$popularity), 2))
@@ -101,7 +101,8 @@ p2 <- pdat |> tidyr::gather("action", "trafo", ga0, ga1) |>
   geom_step() +
   labs(x = "vote count", y = "transformation function", color = "genreAction") +
   scale_color_manual(values = colorspace::diverging_hcl(2),
-                     labels = c("ga0" = 0, "ga1" = 1))
+                     labels = c("ga0" = 0, "ga1" = 1)) +
+  theme(text = element_text(size = 13))
 
 ggpubr::ggarrange(
   p1 + labs(tag = "A"), p2 + labs(tag = "B"), nrow = 1,
@@ -136,7 +137,7 @@ ens_deep <- ensemble(m_deep, n_ensemble = 3, epochs = 50, batch_size = 64,
 
 
 ## ----ensembling-dctms-methods, eval=!ATMonly----------------------------------
-logLik(ens_deep, newdata = test, convert_fun = \(x) - mean(x))
+unlist(logLik(ens_deep, newdata = test, convert_fun = \(x) - mean(x)))
 
 ## ----ensembling-dctms-plot-prereq, eval=!ATMonly------------------------------
 d <- deeptrafo:::.call_for_all_members(
@@ -154,7 +155,8 @@ nd <- data.frame(
 ## ----ensembling-dctms-plot, eval=!ATMonly-------------------------------------
 pdf("ensembling-dctms-plot.pdf", height = 4.5 * 0.8, width = 6.5 * 0.8)
 plot(pdat$value, pdat$V2, type = "l", ylim = range(pdat[, -1]),
-     xlab = "log(1 + bugdet)", ylab = "partial effect", col = "gray80", lty = 2)
+     xlab = "log(1 + bugdet)", ylab = "partial effect", col = "gray80", lty = 2,
+     las = 1)
 matlines(pdat$value, pdat[, -1:-2], col = "gray80", lty = 2)
 rug(train$budget, col = rgb(.1, .1, .1, .3))
 
@@ -170,7 +172,7 @@ dev.off()
 
 ## ----cross-validating-dctms, fig.width=9, fig.height=4.05, eval=!ATMonly------
 cv_deep <- cv(m_deep, epochs = 50, cv_folds = 5, batch_size = 64)
-pdf("cross-validating-dctms.pdf", height = 4.5 * 0.8, width = 6.5 * 0.8)
+pdf("cross-validating-dctms.pdf", height = 4.5, width = 9)
 plot_cv(cv_deep)
 dev.off()
 
@@ -212,6 +214,9 @@ m_0 <- PolrNN(fm_0, data = train, optimizer = optimizer_adam(
     warmstart_weights = list(list(), list(), list("1" = 0))))
 fit(m_0, epochs = 3e3, validation_split = 0, batch_size = length(
   train$action), verbose = FALSE)
+
+all.equal(unlist(unname(coef(m_0, which = "interacting"))),
+  qlogis(mean(train$action == 0)), tol = 1e-6)
 
 ### only tabular ####
 m_tab <- PolrNN(fm_tab, data = train, optimizer = optimizer_adam(
@@ -294,7 +299,8 @@ gp1 <- ggplot(df, aes(x = PC1, y = PC2)) + geom_point(size = 0.2, col = "gray") 
   geom_point(data = df[1:topN, ], aes(x = PC1, y = PC2), size = 0.2, col = "black") +
   geom_text_repel(data = df[1:topN, ], aes(x = PC1, y = PC2, label = words),
                   size = rel(3.5), max.overlaps = 20) +
-  theme_bw() + labs(subtitle = paste0(topN, " most frequent words"))
+  theme_bw() + labs(subtitle = paste0(topN, " most frequent words")) +
+  theme(text = element_text(size = 13))
 
 ##### PCA of embedding from m_text ####
 mod <- keras_model(embd$layers[[1]]$input, get_layer(
@@ -319,7 +325,8 @@ gp2 <- ggplot(df2, aes(x = PC1, y = PC2, col = genres, size = genres)) +
   scale_color_manual(values = c("gray", "red", "blue")) +
   scale_size_manual(values = 1.3 * c(0.3, 1, 1)) +
   theme_bw() + theme(legend.position = "top") +
-  labs(subtitle = "movie reviews in the test data")
+  labs(subtitle = "movie reviews in the test data") +
+  theme(text = element_text(size = 13))
 
 ggpubr::ggarrange(gp1, gp2, common.legend = TRUE)
 ggsave(file = "embedding-pca.pdf", height = 4, width = 8)
@@ -427,7 +434,7 @@ g_dens <- ggplot() +
         panel.grid.minor = element_blank(),
         strip.background = element_blank(),
         panel.border = element_blank(),
-        text = element_text(size = 12), 
+        text = element_text(size = 13), 
         legend.position = "none",
         rect = element_rect(fill = "transparent"))
 
@@ -447,7 +454,7 @@ g_trafo <- ggplot(trafos) +
   xlab(expression(y[t])) +
   scale_x_continuous(expand = c(0,0), breaks = c(15, 20, 25)) +
   guides(color = guide_legend(nrow = 2)) +
-  theme(text = element_text(size=12), legend.position = "bottom") +
+  theme(text = element_text(size = 13), legend.position = "bottom") +
   xlab("Mean maximum temperature (°C) in Melbourne") +
   theme(strip.background = element_blank(), strip.text.x = element_blank()) +
   scale_colour_viridis_d()
@@ -473,9 +480,8 @@ args(weight_control)
 
 ## ----warmstart-and-fix-weights-shift-2, eval=!ATMonly-------------------------
 data("wine", package = "ordinal")
-mw <- deeptrafo(rating ~ 0 + temp, data = wine,
-                weight_options = weight_control(warmstart_weights = list(list(), list(),
-                                                                         list("temp" = 0))))
+mw <- deeptrafo(rating ~ 0 + temp, data = wine, weight_options = weight_control(
+  warmstart_weights = list(list(), list(), list("temp" = 0))))
 unlist(coef(mw))
 
 ## ----custom-basis, eval=!ATMonly----------------------------------------------
@@ -511,11 +517,11 @@ tfc <- trafo_control(
 
 set.seed(1)
 n <- 1e3
-d <- data.frame(y = 1 + rnorm(1e3), x = rnorm(1e3))
+d <- data.frame(y = 1 + rnorm(n), x = rnorm(n))
 m <- deeptrafo(y ~ 0 + x, data = d, trafo_options = tfc,
                optimizer = optimizer_adam(learning_rate = 1e-2),
                latent_distr = "normal")
-fit(m, batch_size = 1e3, epochs = 3e3, validation_split = NULL,
+fit(m, batch_size = n, epochs = 5e3, validation_split = NULL,
     callbacks = list(callback_reduce_lr_on_plateau(monitor = "loss")),
     verbose = FALSE)
 abs(unlist(coef(m)) - coef(Lm(y ~ x, data = d)))
