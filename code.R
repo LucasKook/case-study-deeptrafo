@@ -406,13 +406,13 @@ d_sub_dens <- d_density[time %in% t_idx]
 Sys.setlocale("LC_ALL", "en_GB.UTF-8")
 g_dens <- ggplot() +
   geom_path(data = d_sub_dens, aes(x = y_true, y = time, group = method),
-            colour="red", size=1.5, alpha = 0.2) +
+            colour="red", linewidth = 1.5, alpha = 0.2) +
   geom_point(data = d_sub_dens, aes(x = y_true, y = time, group = method),
-             colour="red", size=1, shape=4) +
-  geom_joy(data = d_sub_dens,
+             colour="red", size = 1, shape = 4) +
+  geom_density_ridges(data = d_sub_dens,
            aes(height = y_density, x = y_grid, y = time,
                group = time, fill = factor(time)),
-           stat="identity", alpha = 0.7, colour = rgb(0,0,0,0.5)) +
+           stat = "identity", alpha = 0.7, colour = rgb(0, 0, 0, 0.5)) +
   scale_y_date(date_breaks = "4 months", date_labels = "%b %Y") +
   scale_fill_viridis_d() +
   guides(fill = guide_legend(nrow = 2)) +
@@ -427,7 +427,7 @@ g_dens <- ggplot() +
         panel.grid.minor = element_blank(),
         strip.background = element_blank(),
         panel.border = element_blank(),
-        text = element_text(size=12),
+        text = element_text(size = 12), 
         legend.position = "none",
         rect = element_rect(fill = "transparent"))
 
@@ -477,7 +477,6 @@ mw <- deeptrafo(rating ~ 0 + temp, data = wine,
                 weight_options = weight_control(warmstart_weights = list(list(), list(),
                                                                          list("temp" = 0))))
 unlist(coef(mw))
-
 
 ## ----custom-basis, eval=!ATMonly----------------------------------------------
 linear_basis <- function(y) {
