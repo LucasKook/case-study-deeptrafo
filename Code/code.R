@@ -38,9 +38,12 @@ library("tram")
 
 theme_set(theme_bw() + theme(legend.position = "top"))
 
+outdir <- "../Figures"
+if (!dir.exists(outdir)) dir.create(outdir)
+
 # Params ------------------------------------------------------------------
 
-bpath <- "."
+bpath <- "../Data"
 nr_words <- 1e4
 embedding_size <- 1e2
 maxlen <- 1e2
@@ -109,7 +112,7 @@ ggpubr::ggarrange(
   common.legend = FALSE
 )
 
-ggsave("plot-hist.pdf", width = 8.1, height = 4.05)
+ggsave(file.path(outdir, "plot-hist.pdf"), width = 8.1, height = 4.05)
 
 ## ----working-with-neural-networks, eval=!ATMonly------------------------------
 embd_mod <- function(x) x |>
@@ -153,7 +156,7 @@ nd <- data.frame(
 
 
 ## ----ensembling-dctms-plot, eval=!ATMonly-------------------------------------
-pdf("ensembling-dctms-plot.pdf", height = 4.5 * 0.8, width = 6.5 * 0.8)
+pdf(file.path(outdir, "ensembling-dctms-plot.pdf"), height = 4.5 * 0.8, width = 6.5 * 0.8)
 plot(pdat$value, pdat$V2, type = "l", ylim = range(pdat[, -1]),
      xlab = "log(1 + bugdet)", ylab = "partial effect", col = "gray80", lty = 2,
      las = 1)
@@ -172,7 +175,7 @@ dev.off()
 
 ## ----cross-validating-dctms, fig.width=9, fig.height=4.05, eval=!ATMonly------
 cv_deep <- cv(m_deep, epochs = 50, cv_folds = 5, batch_size = 64)
-pdf("cross-validating-dctms.pdf", height = 4.5, width = 9)
+pdf(file.path(outdir, "cross-validating-dctms.pdf"), height = 4.5, width = 9)
 plot_cv(cv_deep)
 dev.off()
 
@@ -329,7 +332,7 @@ gp2 <- ggplot(df2, aes(x = PC1, y = PC2, col = genres, size = genres)) +
   theme(text = element_text(size = 13))
 
 ggpubr::ggarrange(gp1, gp2, common.legend = TRUE)
-ggsave(file = "embedding-pca.pdf", height = 4, width = 8)
+ggsave(file = file.path(outdir, "embedding-pca.pdf"), height = 4, width = 8)
 
 
 ## ----preliminaries_ATM, echo = FALSE, results = "hide", message=FALSE---------
@@ -461,7 +464,7 @@ g_trafo <- ggplot(trafos) +
 
 (p1 <- g_dens / g_trafo)
 
-ggsave("plot-ATMs.pdf", p1, width = 10.8, height = 8.1)
+ggsave(file.path(outdir, "plot-ATMs.pdf"), p1, width = 10.8, height = 8.1)
 
 ## ----handling-censored-responses, eval=!ATMonly-------------------------------
 deeptrafo:::response(y = c(0L, 1L))

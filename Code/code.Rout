@@ -1,0 +1,738 @@
+
+R version 4.1.2 (2021-11-01) -- "Bird Hippie"
+Copyright (C) 2021 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ################################################################################
+> ################################################################################
+> # Replication material for "Estimating conditional distributions with Neural
+> # Networks using R package deeptrafo" by Lucas Kook, Philipp FM Baumann, Oliver
+> # Duerr, Beate Sick, and David Ruegamer.
+> ################################################################################
+> ################################################################################
+> 
+> # Dependencies can be installed via the separately provided `dependencies.R`
+> # file
+> 
+> ## ----include=FALSE------------------------------------------------------------
+> library("knitr")
+> opts_chunk$set(engine = "R", tidy = FALSE, prompt = TRUE, cache = FALSE,
++                fig.width = 6.5 * 0.8, fig.height = 4.5 * 0.8, 
++                fig.fullwidth = TRUE, fig.path = "Figures/", 
++                fig.ext = c("pdf", "eps", "jpg", "tiff"), dpi = 600)
+> knitr::render_sweave()  # use Sweave environments
+> knitr::set_header(highlight = "")  # do not \usepackage{Sweave}
+> ## R settings
+> options(prompt = "R> ", continue = "+  ", width = 76, useFancyQuotes = FALSE,
++         digits = 3L)
+R> 
+R> ## ----preliminaries, echo = FALSE, results = "hide", message=FALSE-------------
+R> library("deeptrafo")
+Loading required package: tensorflow
+Loading required package: keras
+Loading required package: tfprobability
+Loading required package: deepregression
+R> library("ggplot2")
+R> library("tsdl") # available from GitHub (FinYang/tsdl)
+R> library("reticulate")
+R> library("safareg")
+R> library("data.table")
+R> library("patchwork")
+R> library("ggridges")
+R> library("moments")
+R> library("lubridate")
+Loading required package: timechange
+
+Attaching package: 'lubridate'
+
+The following objects are masked from 'package:data.table':
+
+    hour, isoweek, mday, minute, month, quarter, second, wday,
+    week, yday, year
+
+The following objects are masked from 'package:base':
+
+    date, intersect, setdiff, union
+
+R> library("boot")
+R> library("ggrepel")
+R> library("tram")
+Loading required package: mlt
+Loading required package: basefun
+Loading required package: variables
+
+Attaching package: 'variables'
+
+The following object is masked from 'package:ggplot2':
+
+    unit
+
+R> 
+R> theme_set(theme_bw() + theme(legend.position = "top"))
+R> 
+R> # Params ------------------------------------------------------------------
+R> 
+R> bpath <- "."
+R> nr_words <- 1e4
+R> embedding_size <- 1e2
+R> maxlen <- 1e2
+R> order_bsp <- 25
+R> repetitions <- 2
+R> 
+R> # Loading the data --------------------------------------------------------
+R> if (!file.exists("data_splitted.RDS"))
++    source("movies.R")
+R> 
+R> ATMonly <- FALSE
+R> 
+R> ## ----data, eval=!ATMonly------------------------------------------------------
+R> data_list <- readRDS(file.path(bpath, "data_splitted.RDS"))[[1]]
+R> train <- data_list[[1]]
+R> test <- data_list[[2]]
+R> 
+R> tokenizer <- text_tokenizer(num_words = nr_words)
+2023-02-28 12:49:02.404844: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2023-02-28 12:49:02.566109: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
+2023-02-28 12:49:02.566156: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2023-02-28 12:49:02.591556: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2023-02-28 12:49:03.092481: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
+2023-02-28 12:49:03.092549: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
+2023-02-28 12:49:03.092557: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+R> mov <- readRDS(file.path(bpath, "mov_ov.RDS"))
+R> tokenizer |> fit_text_tokenizer(mov)
+R> words <- readRDS(file.path(bpath, "words.RDS"))
+R> 
+R> 
+R> ## ----formula-interface, eval=!ATMonly-----------------------------------------
+R> fm <- vote_count | genreAction ~ 0 + s(budget, df = 6) + popularity
+R> 
+R> 
+R> ## ----setting-up-dctms, eval=!ATMonly------------------------------------------
+R> opt <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
+R> (m_fm <- cotramNN(formula = fm, data = train, optimizer = opt))
+2023-02-28 12:49:04.113335: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
+2023-02-28 12:49:04.113378: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
+2023-02-28 12:49:04.113396: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (lucas-cx1): /proc/driver/nvidia/version does not exist
+2023-02-28 12:49:04.113687: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+	 Count outcome deep conditional transformation model
+
+Call:
+deeptrafo(formula = formula, data = data, response_type = response_type, 
+    order = order, addconst_interaction = addconst_interaction, 
+    latent_distr = latent_distr, monitor_metrics = monitor_metrics, 
+    trafo_options = trafo_options, optimizer = ..1)
+
+Interacting:  vote_count | genreAction 
+
+Shifting:  ~0 + s(budget, df = 6) + popularity 
+
+Shift coefficients:
+s(budget, df = 6)1 s(budget, df = 6)2 s(budget, df = 6)3 s(budget, df = 6)4 
+             0.557             -0.702              0.760             -0.181 
+s(budget, df = 6)5 s(budget, df = 6)6 s(budget, df = 6)7 s(budget, df = 6)8 
+            -0.201             -0.687              0.670              0.671 
+s(budget, df = 6)9         popularity 
+            -0.377             -0.888 
+/home/stigler/anaconda3/envs/r-reticulate/lib/python3.8/site-packages/keras/initializers/initializers_v2.py:120: UserWarning: The initializer RandomNormal is unseeded and being called multiple times, which will return identical values  each time (even if the initializer is unseeded). Please update your code to provide a seed to the initializer, or avoid using the same initalizer instance more than once.
+  warnings.warn(
+R> 
+R> 
+R> ## ----fitting-dctms, eval=!ATMonly---------------------------------------------
+R> m_fm_hist <- fit(m_fm, epochs = 1e3, validation_split = 0.1, batch_size = 64,
++                   verbose = FALSE)
+R> unlist(coef(m_fm, which = "shifting"))
+s(budget, df = 6)1 s(budget, df = 6)2 s(budget, df = 6)3 s(budget, df = 6)4 
+           0.38339           -0.28824           -0.04608           -0.03992 
+s(budget, df = 6)5 s(budget, df = 6)6 s(budget, df = 6)7 s(budget, df = 6)8 
+           0.00616           -0.02692           -0.00511            0.01355 
+s(budget, df = 6)9         popularity 
+          -0.36587           -0.82771 
+R> 
+R> 
+R> ## ----plot-hist, fig.width=8.1, fig.height=4.05, eval=!ATMonly-----------------
+R> p1 <- data.frame(x = 1:m_fm_hist$params$epochs,
++                   training = m_fm_hist$metrics$loss,
++                   validation = m_fm_hist$metrics$val_loss) |>
++    tidyr::gather("set", "loss", training, validation) |>
++    ggplot(aes(x = x, y = loss, color = set)) +
++    geom_line() +
++    scale_color_brewer(palette = "Dark2") +
++    labs(x = "epochs", color = "") +
++    theme(text = element_text(size = 13))
+R> 
+R> nd <- list(genreAction = c(0, 1), budget = rep(mean(train$budget), 2),
++             popularity = rep(mean(train$popularity), 2))
+R> preds <- predict(m_fm, newdata = nd, q = seq(0, 2000, 25), type = "trafo")
+R> pdat <- data.frame(y = as.numeric(names(preds)),
++                     ga0 = unlist(lapply(preds, \(x) x[1, 1])),
++                     ga1 = unlist(lapply(preds, \(x) x[2, 1])))
+R> p2 <- pdat |> tidyr::gather("action", "trafo", ga0, ga1) |>
++    ggplot(aes(x = y, y = trafo, color = action)) +
++    geom_step() +
++    labs(x = "vote count", y = "transformation function", color = "genreAction") +
++    scale_color_manual(values = colorspace::diverging_hcl(2),
++                       labels = c("ga0" = 0, "ga1" = 1)) +
++    theme(text = element_text(size = 13))
+R> 
+R> ggpubr::ggarrange(
++    p1 + labs(tag = "A"), p2 + labs(tag = "B"), nrow = 1,
++    common.legend = FALSE
++  )
+R> 
+R> ggsave("plot-hist.pdf", width = 8.1, height = 4.05)
+R> 
+R> ## ----working-with-neural-networks, eval=!ATMonly------------------------------
+R> embd_mod <- function(x) x |>
++    layer_embedding(input_dim = nr_words, output_dim = embedding_size) |>
++    layer_lstm(units = 50, return_sequences = TRUE) |>
++    layer_lstm(units = 50, return_sequences = FALSE) |>
++    layer_dropout(rate = 0.1) |>
++    layer_dense(25) |>
++    layer_dropout(rate = 0.2) |>
++    layer_dense(5) |>
++    layer_dropout(rate = 0.3) |>
++    layer_dense(1)
+R> 
+R> fm_deep <- update(fm, . ~ . + deep(texts))
+R> m_deep <- deeptrafo(fm_deep, data = train,
++                      list_of_deep_models = list(deep = embd_mod))
+R> 
+R> fit(m_deep, epochs = 50, validation_split = 0.1, batch_size = 32,
++      callbacks = list(callback_early_stopping(patience = 5)), verbose = FALSE)
+R> 
+R> 
+R> ## ----ensembling-dctms, eval=!ATMonly------------------------------------------
+R> ens_deep <- ensemble(m_deep, n_ensemble = 3, epochs = 50, batch_size = 64,
++                       verbose = FALSE)
+Fitting member 1 ...
+Done in 4.6  mins 
+Fitting member 2 ...
+Done in 4.91  mins 
+Fitting member 3 ...
+Done in 4.86  mins 
+R> 
+R> 
+R> ## ----ensembling-dctms-methods, eval=!ATMonly----------------------------------
+R> unlist(logLik(ens_deep, newdata = test, convert_fun = \(x) - mean(x)))
+members1 members2 members3     mean ensemble 
+   -8.28    -8.50    -8.32    -8.37    -8.35 
+R> 
+R> ## ----ensembling-dctms-plot-prereq, eval=!ATMonly------------------------------
+R> d <- deeptrafo:::.call_for_all_members(
++    ens_deep, deeptrafo:::plot.deeptrafo, only_data = TRUE)
+R> pd <- data.frame(cbind(
++    value = d[[1]][[1]]$value, do.call("cbind", lapply(
++      d, \(x) x[[1]]$partial_effect))))
+R> ord <- order(pd$value)
+R> pdat <- pd[ord,]
+R> nd <- data.frame(
++    value = pdat$value, ens = apply(pdat[, -1], 1, mean),
++    sd = apply(pdat[, -1], 1, sd))
+R> 
+R> 
+R> ## ----ensembling-dctms-plot, eval=!ATMonly-------------------------------------
+R> pdf("ensembling-dctms-plot.pdf", height = 4.5 * 0.8, width = 6.5 * 0.8)
+R> plot(pdat$value, pdat$V2, type = "l", ylim = range(pdat[, -1]),
++       xlab = "log(1 + bugdet)", ylab = "partial effect", col = "gray80", lty = 2,
++       las = 1)
+R> matlines(pdat$value, pdat[, -1:-2], col = "gray80", lty = 2)
+R> rug(train$budget, col = rgb(.1, .1, .1, .3))
+R> 
+R> lines(nd$value, nd$ens)
+R> polygon(c(nd$value, rev(nd$value)),
++          c(nd$ens + 2 * nd$sd, rev(nd$ens - 2 * nd$sd)),
++          col = rgb(.1, .1, .1, .1), border = FALSE)
+R> 
+R> legend("topright", legend = c("ensemble", "individual"), lty = c(1, 2),
++         col = c(1, "gray80"), lwd = 1, bty = "n")
+R> dev.off()
+pdf 
+  2 
+R> 
+R> 
+R> ## ----cross-validating-dctms, fig.width=9, fig.height=4.05, eval=!ATMonly------
+R> cv_deep <- cv(m_deep, epochs = 50, cv_folds = 5, batch_size = 64)
+Fitting Fold  1  ... 
+Done in 4.11  mins 
+Fitting Fold  2  ... 
+Done in 4.25  mins 
+Fitting Fold  3  ... 
+Done in 4.22  mins 
+Fitting Fold  4  ... 
+Done in 3.88  mins 
+Fitting Fold  5  ... 
+Done in 3.95  mins 
+R> pdf("cross-validating-dctms.pdf", height = 4.5, width = 9)
+R> plot_cv(cv_deep)
+R> dev.off()
+pdf 
+  2 
+R> 
+R> 
+R> ## ----preproc-ontram-----------------------------------------------------------
+R> train$action <- ordered(train$genreAction)
+R> test$action <- ordered(test$genreAction, levels = levels(train$action))
+R> 
+R> 
+R> ## ----embd_mod-----------------------------------------------------------------
+R> make_keras_model <- function() {
++    return(
++      keras_model_sequential(name = "embd")  |>
++        layer_embedding(input_dim = nr_words, output_dim = embedding_size) |>
++        layer_lstm(units = 50, return_sequences = TRUE)  |>
++        layer_lstm(units = 50, return_sequences = FALSE)  |>
++        layer_dropout(rate = 0.1) |>
++        layer_dense(25)  |>
++        layer_dropout(rate = 0.2)  |>
++        layer_dense(5, name = "penultimate")  |>
++        layer_dropout(rate = 0.3) |>
++        layer_dense(1)
++    )
++  }
+R> 
+R> 
+R> ## ----formulas-ontram----------------------------------------------------------
+R> fm_0 <- action ~ 1
+R> fm_tab <- action ~ 0 + popularity
+R> fm_text <- action ~ 0 + deep(texts)
+R> fm_semi <- action ~ 0 + popularity + deep(texts)
+R> 
+R> 
+R> ## ----mods-ontram--------------------------------------------------------------
+R> ### unconditional ####
+R> m_0 <- PolrNN(fm_0, data = train, optimizer = optimizer_adam(
++    learning_rate = 1e-2, decay = 1e-4), weight_options = weight_control(
++      general_weight_options = list(trainable = FALSE, use_bias = FALSE),
++      warmstart_weights = list(list(), list(), list("1" = 0))))
+R> fit(m_0, epochs = 3e3, validation_split = 0, batch_size = length(
++    train$action), verbose = FALSE)
+R> 
+R> all.equal(unlist(unname(coef(m_0, which = "interacting"))),
++    qlogis(mean(train$action == 0)), tol = 1e-6)
+[1] TRUE
+R> 
+R> ### only tabular ####
+R> m_tab <- PolrNN(fm_tab, data = train, optimizer = optimizer_adam(
++    learning_rate = 0.1, decay = 1e-4))
+R> fit(m_tab, epochs = 1e3, batch_size = length(train$action),
++      validation_split = 0, verbose = FALSE)
+R> exp(-unlist(coef(m_tab, which = "shifting")))
+popularity 
+      1.54 
+R> 
+R> ### only text ####
+R> embd <- make_keras_model()
+R> m_text <- PolrNN(fm_text, data = train, list_of_deep_models = list(
++    deep = embd), optimizer = optimizer_adam(learning_rate = 1e-4))
+R> fit(m_text, epochs = 10, callbacks = list(callback_early_stopping(
++    patience = 2, restore_best_weights = TRUE)), verbose = FALSE)
+R> 
+R> ### semi-structured ####
+R> embd_semi <- make_keras_model()
+R> 
+R> optimizer <- function(model) {
++    optimizers_and_layers <- list(
++      tuple(optimizer_adam(learning_rate = 1e-2),
++            get_layer(model, "ia_1__2")),
++      tuple(optimizer_adam(learning_rate = 1e-2),
++            get_layer(model, "popularity_3")),
++      tuple(optimizer_adam(learning_rate = 1e-4),
++            get_layer(model, "embd")))
++    multioptimizer(optimizers_and_layers)
++  }
+R> m_semi <- PolrNN(fm_semi, data = train, list_of_deep_models = list(
++    deep = embd_semi), optimizer = optimizer)
+R> fit(m_semi, epochs = 10, callbacks = list(callback_early_stopping(
++    patience = 2, restore_best_weights = TRUE)), verbose = FALSE)
+R> 
+R> 
+R> ## ----mods-comparison-ontram---------------------------------------------------
+R> all.equal(unname(unlist(coef(m_0, which = "interacting"))),
++            qlogis(mean(train$action == 0)), tol = 1e-6)
+[1] TRUE
+R> 
+R> # compare test prediction performance
+R> bci <- function(mod) {
++    lli <- logLik(mod, newdata = test, convert_fun = identity)
++    bt <- boot(lli, statistic = \(x, d) mean(x[d]), R = 1e4)
++    btci <- boot.ci(bt, conf = 0.95, type = "perc")$percent[1, 4:5]
++    c("nll" = mean(lli), "lwr" = btci[1], "upr" = btci[2])
++  }
+R> 
+R> mods <- list("unconditional" = m_0, "tabular only" = m_tab,
++               "text only" = m_text, "semi-structured" = m_semi)
+R> do.call("cbind", lapply(mods, bci))
+    unconditional tabular only text only semi-structured
+nll         0.531        0.516     0.437           0.423
+lwr         0.501        0.486     0.390           0.372
+upr         0.562        0.549     0.486           0.478
+R> 
+R> c("tabular only" = unlist(unname(coef(m_tab))),
++    "semi-structured" = unlist(unname(coef(m_semi))))
+   tabular only semi-structured 
+          -0.43           -0.32 
+R> 
+R> 
+R> ## ----embedding-pca-plot-------------------------------------------------------
+R> d <- table(test$texts)
+R> d_sorted <- d[order(d, decreasing = TRUE)]
+R> nw <- as.integer(names(d_sorted[1:1e3]))
+R> 
+R> mod <- keras_model(embd$layers[[1]]$input, get_layer(
++    embd, "embedding_1")$output)
+R> number_words_per_movie <- 100
+R> inp <- texts_to_sequences(tokenizer, words$word[nw]) |>
++    pad_sequences(maxlen = number_words_per_movie, truncating = "post")
+R> dat <- mod(inp)$numpy()
+R> 
+R> dat <- cbind(words[nw, ], dat)
+R> res <- prcomp(dat[,-c(1:2)])
+R> 
+R> ### ggplot word embedding ###
+R> df <- data.frame(
++    PC1 = res$x[,1],
++    PC2 = res$x[,2],
++    words = dat$word
++  )
+R> 
+R> topN <- 100
+R> 
+R> gp1 <- ggplot(df, aes(x = PC1, y = PC2)) + geom_point(size = 0.2, col = "gray") +
++    geom_point(data = df[1:topN, ], aes(x = PC1, y = PC2), size = 0.2, col = "black") +
++    geom_text_repel(data = df[1:topN, ], aes(x = PC1, y = PC2, label = words),
++                    size = rel(3.5), max.overlaps = 20) +
++    theme_bw() + labs(subtitle = paste0(topN, " most frequent words")) +
++    theme(text = element_text(size = 13))
+R> 
+R> ##### PCA of embedding from m_text ####
+R> mod <- keras_model(embd$layers[[1]]$input, get_layer(
++    embd, "penultimate")$output)
+R> mod_movie_dat <- mod(test$texts)$numpy()
+R> res <- prcomp(mod_movie_dat)
+R> 
+R> genres <- rep(0, length(test$genreAction)) # All movies
+R> genres[test$genreAction == 1] <- 1 # Action Movis
+R> genres[test$genreRomance == 1] <- 2 # Action Romance
+R> 
+R> ### ggplot text embedding ###
+R> df2 <- data.frame(
++    PC1 = res$x[,1],
++    PC2 = res$x[,2],
++    genres = factor(genres, levels = 0:2, labels = c(
++      "Neither", "Action", "Romance"))
++  )
+R> 
+R> gp2 <- ggplot(df2, aes(x = PC1, y = PC2, col = genres, size = genres)) +
++    geom_point() +
++    scale_color_manual(values = c("gray", "red", "blue")) +
++    scale_size_manual(values = 1.3 * c(0.3, 1, 1)) +
++    theme_bw() + theme(legend.position = "top") +
++    labs(subtitle = "movie reviews in the test data") +
++    theme(text = element_text(size = 13))
+R> 
+R> ggpubr::ggarrange(gp1, gp2, common.legend = TRUE)
+Warning message:
+ggrepel: 2 unlabeled data points (too many overlaps). Consider increasing max.overlaps 
+R> ggsave(file = "embedding-pca.pdf", height = 4, width = 8)
+Warning message:
+ggrepel: 14 unlabeled data points (too many overlaps). Consider increasing max.overlaps 
+R> 
+R> 
+R> ## ----preliminaries_ATM, echo = FALSE, results = "hide", message=FALSE---------
+R> d <- subset(tsdl, "Meteorology")
+R> nm <- "Mean maximum temperature in Melbourne: degrees C. Jan 71 – Dec 90."
+R> temp_idx <- sapply(d, attr, "description") == nm
+R> y <- d_ts <- d[temp_idx][[1]]
+R> 
+R> n_gr <- 300
+R> min_supp <- 10
+R> max_supp <- 30
+R> M <- 6L # order bsp
+R> ep <- 1e4
+R> p <- 3
+R> gr <- seq(min_supp ,max_supp , length.out = n_gr)
+R> time_var <- seq(as.Date("1971-01-01"), as.Date("1990-12-01"), by = "month")
+R> d_ts <- data.table(time = time_var, y = as.numeric(d_ts))
+R> d_ts[, month := factor(month(time))]
+R> d_ts[, paste0("y_lag_", 1:p) := shift(y, n = 1:p, type = "lag", fill = NA)]
+R> d_ts <- na.omit(d_ts)
+R> len_y <- nrow(d_ts)
+R> 
+R> 
+R> ## ----formula-interface_ATM----------------------------------------------------
+R> lags <- c(paste0("y_lag_", 1:p, collapse = "+"))
+R> atplags <- c(paste0("atplag(y_lag_", 1:p, ")", collapse = "+"))
+R> (fm_atm <- as.formula(paste0("y |", lags, "~ 0 + month +", atplags)))
+y | y_lag_1 + y_lag_2 + y_lag_3 ~ 0 + month + atplag(y_lag_1) + 
+    atplag(y_lag_2) + atplag(y_lag_3)
+R> (fm_atp <- as.formula(paste0("y ~ 0 + month +", atplags)))
+y ~ 0 + month + atplag(y_lag_1) + atplag(y_lag_2) + atplag(y_lag_3)
+R> (fm_colr <- as.formula(paste0("y ~ 0 + month + ", lags)))
+y ~ 0 + month + y_lag_1 + y_lag_2 + y_lag_3
+R> 
+R> 
+R> ## ----fitting-ATMs-------------------------------------------------------------
+R> mod_fun <- \(fm) ColrNN(fm, data = d_ts, trafo_options = trafo_control(
++    order_bsp = M, support = c(min_supp, max_supp)), tf_seed = 1,
++    optimizer = optimizer_adam(learning_rate = 0.01))
+R> 
+R> mods <- lapply(list(fm_atm, fm_atp, fm_colr), mod_fun)
+R> 
+R> fit_fun <- \(m) m |> fit(epochs = ep, callbacks = list(
++    callback_early_stopping(patience = 50, monitor = "loss"),
++    callback_reduce_lr_on_plateau(patience = 20, factor = 0.9, monitor = "loss")),
++    batch_size = nrow(d_ts), validation_split = 0, verbose = FALSE)
+R> 
+R> lapply(mods, \(m) {
++    mhist <- fit_fun(m)
++    # plot(mhist)
++  })
+[[1]]
+
+Final epoch (plot to see history):
+loss: 1.471
+  lr: 0.00000177 
+
+[[2]]
+
+Final epoch (plot to see history):
+loss: 1.611
+  lr: 0.000002427 
+
+[[3]]
+
+Final epoch (plot to see history):
+loss: 1.489
+  lr: 0.000001966 
+
+R> 
+R> 
+R> ## ----in-sample-logLiks-ATM----------------------------------------------------
+R> t_idx <- seq(as.Date("1977-06-01"), as.Date("1978-05-01"), by = "month")
+R> ndl <- d_ts[d_ts$time %in% t_idx]
+R> structure(unlist(lapply(mods, logLik, newdata = ndl)), names = c(
++    "ATM", paste0("AT(", p, ")"), "Colr"))
+  ATM AT(3)  Colr 
+-19.5 -22.5 -20.1 
+R> 
+R> 
+R> ## ----in_sample_cond_densities_ATMs--------------------------------------------
+R> # In-sample densities
+R> m_atm <- mods[[1]]
+R> m_atp <- mods[[2]]
+R> m_colr <- mods[[3]]
+R> 
+R> nd <- ndt <-  d_ts |> dplyr::mutate(y_true = y, y = list(gr)) |>
++    tidyr::unnest(y)
+R> nd$d_atp <- c(predict(m_atp, newdata = nd, type = "pdf"))
+R> nd$d_atm <- c(predict(m_atm, newdata = nd, type = "pdf"))
+R> nd$d_colr <- c(predict(m_colr, newdata = nd, type = "pdf"))
+R> d_density <- nd |>
++    tidyr::gather("method", "y_density", d_atm, d_atp, d_colr) |>
++    dplyr::mutate(y_grid = y) |> as.data.table()
+R> 
+R> # In-sample trafos
+R> ndt$t_atp <- c(predict(m_atp, newdata = ndt, type = "trafo"))
+R> ndt$t_atm <- c(predict(m_atm, newdata = ndt, type = "trafo"))
+R> ndt$t_colr <- c(predict(m_colr, newdata = ndt, type = "trafo"))
+R> 
+R> 
+R> ## ----plot-ATMs, fig.width=10.8, fig.height=8.1--------------------------------
+R> d_sub_dens <- d_density[time %in% t_idx]
+R> 
+R> Sys.setlocale("LC_ALL", "en_GB.UTF-8")
+[1] "LC_CTYPE=en_GB.UTF-8;LC_NUMERIC=C;LC_TIME=en_GB.UTF-8;LC_COLLATE=en_GB.UTF-8;LC_MONETARY=en_GB.UTF-8;LC_MESSAGES=en_US.UTF-8;LC_PAPER=de_CH.UTF-8;LC_NAME=C;LC_ADDRESS=C;LC_TELEPHONE=C;LC_MEASUREMENT=de_CH.UTF-8;LC_IDENTIFICATION=C"
+R> g_dens <- ggplot() +
++    geom_path(data = d_sub_dens, aes(x = y_true, y = time, group = method),
++              colour="red", linewidth = 1.5, alpha = 0.2) +
++    geom_point(data = d_sub_dens, aes(x = y_true, y = time, group = method),
++               colour="red", size = 1, shape = 4) +
++    geom_density_ridges(data = d_sub_dens,
++             aes(height = y_density, x = y_grid, y = time,
++                 group = time, fill = factor(time)),
++             stat = "identity", alpha = 0.7, colour = rgb(0, 0, 0, 0.5)) +
++    scale_y_date(date_breaks = "4 months", date_labels = "%b %Y") +
++    scale_fill_viridis_d() +
++    guides(fill = guide_legend(nrow = 2)) +
++    facet_grid(~ method, labeller = as_labeller(c("d_atp" = paste0("AT(", p, ")"),
++                                                  "d_atm" = "ATM",
++                                                  "d_colr" = "Colr"))) +
++    theme_bw() +
++    labs(color = "month") +
++    xlab("") +
++    ylab("") +
++    theme(panel.grid.major = element_blank(),
++          panel.grid.minor = element_blank(),
++          strip.background = element_blank(),
++          panel.border = element_blank(),
++          text = element_text(size = 13), 
++          legend.position = "none",
++          rect = element_rect(fill = "transparent"))
+R> 
+R> trafos <- ndt |>
++    tidyr::gather("method", "h", t_atm, t_atp, t_colr) |>
++    dplyr::filter(time %in% t_idx) |>
++    dplyr::mutate(month = ordered(
++      format(as.Date(time), format = "%b %Y"),
++      levels = format(sort(unique(as.Date(time))), format = "%b %Y")))
+R> 
+R> g_trafo <- ggplot(trafos) +
++    geom_line(aes(x = y, y = h, color = month)) +
++    theme_set(theme_bw() + theme(legend.position = "bottom")) +
++    facet_grid(~ method, labeller = as_labeller(
++      c("t_atm" = "ATM", "t_atp" = paste0("AT(", p, ")"), "t_colr" = "Colr"))) +
++    ylab(expression(hat(h)(y[t]*"|"*Y[p] *"="* y[p]))) +
++    xlab(expression(y[t])) +
++    scale_x_continuous(expand = c(0,0), breaks = c(15, 20, 25)) +
++    guides(color = guide_legend(nrow = 2)) +
++    theme(text = element_text(size = 13), legend.position = "bottom") +
++    xlab("Mean maximum temperature (°C) in Melbourne") +
++    theme(strip.background = element_blank(), strip.text.x = element_blank()) +
++    scale_colour_viridis_d()
+R> 
+R> (p1 <- g_dens / g_trafo)
+R> 
+R> ggsave("plot-ATMs.pdf", p1, width = 10.8, height = 8.1)
+R> 
+R> ## ----handling-censored-responses, eval=!ATMonly-------------------------------
+R> deeptrafo:::response(y = c(0L, 1L))
+     cleft exact cright cinterval
+[1,]     1     0      0         0
+[2,]     0     0      0         1
+attr(,"type")
+[1] "count"
+R> 
+R> 
+R> ## ----warmstart-and-fix-weights-shift, eval=!ATMonly---------------------------
+R> nn <- keras_model_sequential() |>
++    layer_dense(input_shape = 1L, units = 3L, activation = "relu",
++                use_bias = FALSE, kernel_initializer = initializer_constant(value = 1))
+R> unlist(get_weights(nn))
+[1] 1 1 1
+R> 
+R> 
+R> ## ----weight_control, eval=!ATMonly--------------------------------------------
+R> args(weight_control)
+function (specific_weight_options = NULL, general_weight_options = list(activation = NULL, 
+    use_bias = FALSE, trainable = TRUE, kernel_initializer = "glorot_uniform", 
+    bias_initializer = "zeros", kernel_regularizer = NULL, bias_regularizer = NULL, 
+    activity_regularizer = NULL, kernel_constraint = NULL, bias_constraint = NULL), 
+    warmstart_weights = NULL, shared_layers = NULL) 
+NULL
+R> 
+R> 
+R> ## ----warmstart-and-fix-weights-shift-2, eval=!ATMonly-------------------------
+R> data("wine", package = "ordinal")
+R> mw <- deeptrafo(rating ~ 0 + temp, data = wine, weight_options = weight_control(
++    warmstart_weights = list(list(), list(), list("temp" = 0))))
+R> unlist(coef(mw))
+temp 
+   0 
+R> 
+R> ## ----custom-basis, eval=!ATMonly----------------------------------------------
+R> linear_basis <- function(y) {
++    ret <- cbind(1, y)
++    if (NROW(ret) == 1)
++      return(as.vector(ret))
++    ret
++  }
+R> 
+R> linear_basis_prime <- function(y) {
++    ret <- cbind(0, rep(1, length(y)))
++    if (NROW(ret) == 1)
++      return(as.vector(ret))
++    ret
++  }
+R> 
+R> constraint <- function(w, bsp_dim) {
++    w_res <- tf$reshape(w, shape = list(bsp_dim, as.integer(nrow(w) / bsp_dim)))
++    w1 <- tf$slice(w_res, c(0L, 0L), size = c(1L, ncol(w_res)))
++    wrest <- tf$math$softplus(tf$slice(w_res, c(1L, 0L), size = c(as.integer(nrow(
++      w_res) - 1), ncol(w_res))))
++    w_w_cons <- k_concatenate(list(w1, wrest), axis = 1L)
++    tf$reshape(w_w_cons, shape = list(nrow(w), 1L))
++  }
+R> 
+R> tfc <- trafo_control(
++    order_bsp = 1L,
++    y_basis_fun = linear_basis,
++    y_basis_fun_prime = linear_basis_prime,
++    basis = constraint
++  )
+R> 
+R> set.seed(1)
+R> n <- 1e3
+R> d <- data.frame(y = 1 + rnorm(n), x = rnorm(n))
+R> m <- deeptrafo(y ~ 0 + x, data = d, trafo_options = tfc,
++                 optimizer = optimizer_adam(learning_rate = 1e-2),
++                 latent_distr = "normal")
+R> fit(m, batch_size = n, epochs = 5e3, validation_split = NULL,
++      callbacks = list(callback_reduce_lr_on_plateau(monitor = "loss")),
++      verbose = FALSE)
+R> abs(unlist(coef(m)) - coef(Lm(y ~ x, data = d)))
+    x 
+0.023 
+R> 
+R> 
+R> ## ----alternative-interface, eval=!ATMonly-------------------------------------
+R> dord <- data.frame(Y = ordered(sample.int(6, 100, TRUE)),
++                     X = rnorm(100), Z = rnorm(100))
+R> ontram(response = ~ Y, intercept = ~ X, shift = ~ 0 + s(Z, df = 3),
++         data = dord)
+	 Ordinal outcome deep conditional transformation model
+
+Call:
+deeptrafo(formula = fml, data = data, response_type = response_type, 
+    order = order, addconst_interaction = addconst_interaction, 
+    latent_distr = latent_distr, monitor_metrics = monitor_metrics, 
+    trafo_options = trafo_options)
+
+Interacting:  Y | X 
+
+Shifting:  ~0 + s(Z, df = 3) 
+
+Shift coefficients:
+s(Z, df = 3)1 s(Z, df = 3)2 s(Z, df = 3)3 s(Z, df = 3)4 s(Z, df = 3)5 
+      -0.4760       -0.7326       -0.6233       -0.4061       -0.4309 
+s(Z, df = 3)6 s(Z, df = 3)7 s(Z, df = 3)8 s(Z, df = 3)9 
+      -0.5447        0.6729        0.7376        0.0947 
+R> 
+R> 
+R> ## ----large-factor-models------------------------------------------------------
+R> set.seed(0)
+R> n <- 1e6
+R> nlevs <- 1e3
+R> X <- factor(sample.int(nlevs, n, TRUE))
+R> Y <- (X == 2) - (X == 3) + rnorm(n)
+R> d <- data.frame(Y = Y, X = X)
+R> m <- LmNN(Y ~ 0 + fac(X), data = d, additional_processor = list(
++    fac = fac_processor), optimizer = optimizer_adam(learning_rate = 1e-2))
+R> fit(m, batch_size = 1e4, epochs = 20, validation_split = 0, callbacks = list(
++    callback_early_stopping("loss", patience = 3),
++    callback_reduce_lr_on_plateau("loss", 0.9, 2)), verbose = FALSE)
+R> bl <- unlist(coef(m, which = "interacting"))
+R> - (unlist(coef(m))[1:5] + bl[1]) / bl[2]
+fac(X)1 fac(X)2 fac(X)3 fac(X)4 fac(X)5 
+-0.0204  0.9986 -1.0156 -0.0249  0.0477 
+R> logLik(m, batch_size = 1e4, convert_fun = \(x) - mean(x))
+[1] -1.42
+R> 
+> proc.time()
+   user  system elapsed 
+  10047    1234    3062 

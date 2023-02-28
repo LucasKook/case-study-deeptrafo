@@ -2,7 +2,7 @@
 # deeptrafo case study
 # LK, DR 2022
 
-bpath <- "."
+bpath <- file.path("..", "Data")
 nr_words <- 1e4
 embedding_size <- 1e2
 maxlen <- 1e2
