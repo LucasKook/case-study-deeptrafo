@@ -1,9 +1,9 @@
 # Case study `deeptrafo`
 
 This repository contains code for reproducing the results in
-[arXiv:...](https://arxiv.org/abs/...) using the R package `deeptrafo` with
-stable version available on [CRAN](https://CRAN.R-project.org/package=deeptrafo)
-and development version on
+[arXiv:2211.13665](https://arxiv.org/abs/2211.13665) using the R package
+`deeptrafo` with stable version available on
+[CRAN](https://CRAN.R-project.org/package=deeptrafo) and development version on
 [GitHub](https://github.com/neural-structured-additive-learning/deeptrafo).
 
 # Installation
