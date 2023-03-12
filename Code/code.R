@@ -351,30 +351,29 @@ gr <- seq(min_supp ,max_supp , length.out = n_gr)
 time_var <- seq(as.Date("1971-01-01"), as.Date("1990-12-01"), by = "month")
 d_ts <- data.table(time = time_var, y = as.numeric(d_ts))
 d_ts[, month := factor(month(time))]
-d_ts[, paste0("y_lag_", 1:p) := shift(y, n = 1:p, type = "lag", fill = NA)]
-d_ts <- na.omit(d_ts)
-len_y <- nrow(d_ts)
-
+d_ts_lag <- d_ts[, paste0("y_lag_", 1:p) := shift(y, n = 1:p, type = "lag", fill = NA)]
+d_ts_lag <- na.omit(d_ts_lag)
 
 ## ----formula-interface_ATM----------------------------------------------------
 lags <- c(paste0("y_lag_", 1:p, collapse = "+"))
 atplags <- c(paste0("atplag(y_lag_", 1:p, ")", collapse = "+"))
-(fm_atm <- as.formula(paste0("y |", lags, "~ 0 + month +", atplags)))
-(fm_atp <- as.formula(paste0("y ~ 0 + month +", atplags)))
+(fm_atm <- as.formula(paste0("y |", lags, "~ 0 + month + atplag(1:",p,")")))
+(fm_atp <- as.formula(paste0("y ~ 0 + month + atplag(1:",p,")")))
 (fm_colr <- as.formula(paste0("y ~ 0 + month + ", lags)))
 
 
 ## ----fitting-ATMs-------------------------------------------------------------
-mod_fun <- \(fm) ColrNN(fm, data = d_ts, trafo_options = trafo_control(
+mod_fun <- function(fm, d) ColrNN(fm, data = d, trafo_options = trafo_control(
   order_bsp = M, support = c(min_supp, max_supp)), tf_seed = 1,
   optimizer = optimizer_adam(learning_rate = 0.01))
 
-mods <- lapply(list(fm_atm, fm_atp, fm_colr), mod_fun)
+mods <- c(lapply(list(fm_atm, fm_atp), mod_fun, d = d_ts), 
+          lapply(list(fm_colr), mod_fun, d = d_ts_lag))
 
 fit_fun <- \(m) m |> fit(epochs = ep, callbacks = list(
   callback_early_stopping(patience = 50, monitor = "loss"),
   callback_reduce_lr_on_plateau(patience = 20, factor = 0.9, monitor = "loss")),
-  batch_size = nrow(d_ts), validation_split = 0, verbose = FALSE)
+  batch_size = nrow(d_ts_lag), validation_split = 0, verbose = FALSE)
 
 lapply(mods, \(m) {
   mhist <- fit_fun(m)
@@ -383,9 +382,12 @@ lapply(mods, \(m) {
 
 
 ## ----in-sample-logLiks-ATM----------------------------------------------------
-t_idx <- seq(as.Date("1977-06-01"), as.Date("1978-05-01"), by = "month")
-ndl <- d_ts[d_ts$time %in% t_idx]
-structure(unlist(lapply(mods, logLik, newdata = ndl)), names = c(
+t_span_one <- seq(as.Date("1977-03-01"), as.Date("1978-05-01"), by = "month")
+ndl <- d_ts[d_ts$time %in% t_span_one]
+t_span_two <- seq(as.Date("1977-06-01"), as.Date("1978-05-01"), by = "month")
+ndl_lag <- d_ts_lag[d_ts_lag$time %in% t_span_two]
+structure(unlist(c(lapply(mods[1:2], logLik, newdata = ndl), 
+                   lapply(mods[3], logLik, newdata = ndl_lag))), names = c(
   "ATM", paste0("AT(", p, ")"), "Colr"))
 
 
@@ -395,23 +397,51 @@ m_atm <- mods[[1]]
 m_atp <- mods[[2]]
 m_colr <- mods[[3]]
 
-nd <- ndt <-  d_ts |> dplyr::mutate(y_true = y, y = list(gr)) |>
+# colr
+nd <- ndt <- d_ts_lag |> dplyr::mutate(y_true = y, y = list(gr)) |>
   tidyr::unnest(y)
-nd$d_atp <- c(predict(m_atp, newdata = nd, type = "pdf"))
-nd$d_atm <- c(predict(m_atm, newdata = nd, type = "pdf"))
 nd$d_colr <- c(predict(m_colr, newdata = nd, type = "pdf"))
+
+pg <- TRUE
+attr(pg, "rname") <- "y_true"
+attr(pg, "y") <- "y"
+
+# atp and atm
+nd_atp <- ndt_atp <- d_ts |> dplyr::mutate(y_true = y, y = list(gr)) |>
+  tidyr::unnest(y)
+nd_atp_lag <- subset(nd_atp, time >= "1971-04-01")
+nd_atp <- nd_atp[order(nd_atp$y, nd_atp$time),]
+nd_atp_lag <- nd_atp_lag[order(nd_atp_lag$y, nd_atp_lag$time),]
+nd_atp_lag$d_atp <- c(predict(m_atp, newdata = nd_atp, type = "pdf", 
+                              pred_grid = pg))
+nd_atp_lag$d_atm <- c(predict(m_atm, newdata = nd_atp, type = "pdf", 
+                              pred_grid = pg))
+
+nd <- merge(nd, nd_atp_lag)
+
 d_density <- nd |>
   tidyr::gather("method", "y_density", d_atm, d_atp, d_colr) |>
   dplyr::mutate(y_grid = y) |> as.data.table()
 
 # In-sample trafos
-ndt$t_atp <- c(predict(m_atp, newdata = ndt, type = "trafo"))
-ndt$t_atm <- c(predict(m_atm, newdata = ndt, type = "trafo"))
+
+# colr
 ndt$t_colr <- c(predict(m_colr, newdata = ndt, type = "trafo"))
 
+# atp and atm
+ndt_atp_lag <- subset(ndt_atp, time >= "1971-04-01")
+ndt_atp <- ndt_atp[order(ndt_atp$y, ndt_atp$time),]
+ndt_atp_lag <- nd_atp_lag[order(nd_atp_lag$y, nd_atp_lag$time),]
+ndt_atp_lag$t_atp <- c(predict(m_atp, newdata = ndt_atp, type = "trafo", 
+                               pred_grid = pg))
+ndt_atp_lag$t_atm <- c(predict(m_atm, newdata = ndt_atp, type = "trafo", 
+                               pred_grid = pg))
+
+ndt <- merge(ndt, ndt_atp_lag)
 
 ## ----plot-ATMs, fig.width=10.8, fig.height=8.1--------------------------------
-d_sub_dens <- d_density[time %in% t_idx]
+plot_period <- seq(as.Date("1983-06-01"), as.Date("1984-05-01"), by = "month")
+d_sub_dens <- d_density[time %in% plot_period]
 
 Sys.setlocale("LC_ALL", "en_GB.UTF-8")
 g_dens <- ggplot() +
@@ -443,7 +473,7 @@ g_dens <- ggplot() +
 
 trafos <- ndt |>
   tidyr::gather("method", "h", t_atm, t_atp, t_colr) |>
-  dplyr::filter(time %in% t_idx) |>
+  dplyr::filter(time %in% plot_period) |>
   dplyr::mutate(month = ordered(
     format(as.Date(time), format = "%b %Y"),
     levels = format(sort(unique(as.Date(time))), format = "%b %Y")))
