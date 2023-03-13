@@ -12,8 +12,8 @@
 ## ----include=FALSE------------------------------------------------------------
 library("knitr")
 opts_chunk$set(engine = "R", tidy = FALSE, prompt = TRUE, cache = FALSE,
-               fig.width = 6.5 * 0.8, fig.height = 4.5 * 0.8, 
-               fig.fullwidth = TRUE, fig.path = "Figures/", 
+               fig.width = 6.5 * 0.8, fig.height = 4.5 * 0.8,
+               fig.fullwidth = TRUE, fig.path = "Figures/",
                fig.ext = c("pdf", "eps", "jpg", "tiff"), dpi = 600)
 knitr::render_sweave()  # use Sweave environments
 knitr::set_header(highlight = "")  # do not \usepackage{Sweave}
@@ -356,9 +356,8 @@ d_ts_lag <- na.omit(d_ts_lag)
 
 ## ----formula-interface_ATM----------------------------------------------------
 lags <- c(paste0("y_lag_", 1:p, collapse = "+"))
-atplags <- c(paste0("atplag(y_lag_", 1:p, ")", collapse = "+"))
-(fm_atm <- as.formula(paste0("y |", lags, "~ 0 + month + atplag(1:",p,")")))
-(fm_atp <- as.formula(paste0("y ~ 0 + month + atplag(1:",p,")")))
+(fm_atm <- as.formula(paste0("y |", lags, "~ 0 + month + atplag(1:p)")))
+(fm_atp <- as.formula(paste0("y ~ 0 + month + atplag(1:p)")))
 (fm_colr <- as.formula(paste0("y ~ 0 + month + ", lags)))
 
 
@@ -367,7 +366,7 @@ mod_fun <- function(fm, d) ColrNN(fm, data = d, trafo_options = trafo_control(
   order_bsp = M, support = c(min_supp, max_supp)), tf_seed = 1,
   optimizer = optimizer_adam(learning_rate = 0.01))
 
-mods <- c(lapply(list(fm_atm, fm_atp), mod_fun, d = d_ts), 
+mods <- c(lapply(list(fm_atm, fm_atp), mod_fun, d = d_ts),
           lapply(list(fm_colr), mod_fun, d = d_ts_lag))
 
 fit_fun <- \(m) m |> fit(epochs = ep, callbacks = list(
@@ -386,7 +385,7 @@ t_span_one <- seq(as.Date("1977-03-01"), as.Date("1978-05-01"), by = "month")
 ndl <- d_ts[d_ts$time %in% t_span_one]
 t_span_two <- seq(as.Date("1977-06-01"), as.Date("1978-05-01"), by = "month")
 ndl_lag <- d_ts_lag[d_ts_lag$time %in% t_span_two]
-structure(unlist(c(lapply(mods[1:2], logLik, newdata = ndl), 
+structure(unlist(c(lapply(mods[1:2], logLik, newdata = ndl),
                    lapply(mods[3], logLik, newdata = ndl_lag))), names = c(
   "ATM", paste0("AT(", p, ")"), "Colr"))
 
@@ -412,9 +411,9 @@ nd_atp <- ndt_atp <- d_ts |> dplyr::mutate(y_true = y, y = list(gr)) |>
 nd_atp_lag <- subset(nd_atp, time >= "1971-04-01")
 nd_atp <- nd_atp[order(nd_atp$y, nd_atp$time),]
 nd_atp_lag <- nd_atp_lag[order(nd_atp_lag$y, nd_atp_lag$time),]
-nd_atp_lag$d_atp <- c(predict(m_atp, newdata = nd_atp, type = "pdf", 
+nd_atp_lag$d_atp <- c(predict(m_atp, newdata = nd_atp, type = "pdf",
                               pred_grid = pg))
-nd_atp_lag$d_atm <- c(predict(m_atm, newdata = nd_atp, type = "pdf", 
+nd_atp_lag$d_atm <- c(predict(m_atm, newdata = nd_atp, type = "pdf",
                               pred_grid = pg))
 
 nd <- merge(nd, nd_atp_lag)
@@ -432,9 +431,9 @@ ndt$t_colr <- c(predict(m_colr, newdata = ndt, type = "trafo"))
 ndt_atp_lag <- subset(ndt_atp, time >= "1971-04-01")
 ndt_atp <- ndt_atp[order(ndt_atp$y, ndt_atp$time),]
 ndt_atp_lag <- nd_atp_lag[order(nd_atp_lag$y, nd_atp_lag$time),]
-ndt_atp_lag$t_atp <- c(predict(m_atp, newdata = ndt_atp, type = "trafo", 
+ndt_atp_lag$t_atp <- c(predict(m_atp, newdata = ndt_atp, type = "trafo",
                                pred_grid = pg))
-ndt_atp_lag$t_atm <- c(predict(m_atm, newdata = ndt_atp, type = "trafo", 
+ndt_atp_lag$t_atm <- c(predict(m_atm, newdata = ndt_atp, type = "trafo",
                                pred_grid = pg))
 
 ndt <- merge(ndt, ndt_atp_lag)
@@ -467,7 +466,7 @@ g_dens <- ggplot() +
         panel.grid.minor = element_blank(),
         strip.background = element_blank(),
         panel.border = element_blank(),
-        text = element_text(size = 13), 
+        text = element_text(size = 13),
         legend.position = "none",
         rect = element_rect(fill = "transparent"))
 
