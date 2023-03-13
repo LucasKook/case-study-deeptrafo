@@ -357,7 +357,7 @@ d_ts_lag <- na.omit(d_ts_lag)
 ## ----formula-interface_ATM----------------------------------------------------
 lags <- c(paste0("y_lag_", 1:p, collapse = "+"))
 (fm_atm <- as.formula(paste0("y |", lags, "~ 0 + month + atplag(1:p)")))
-(fm_atp <- as.formula(paste0("y ~ 0 + month + atplag(1:p)")))
+(fm_atp <- y ~ 0 + month + atplag(1:p))
 (fm_colr <- as.formula(paste0("y ~ 0 + month + ", lags)))
 
 
