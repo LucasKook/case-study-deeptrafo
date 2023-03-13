@@ -31,8 +31,8 @@ Type 'q()' to quit R.
 > ## ----include=FALSE------------------------------------------------------------
 > library("knitr")
 > opts_chunk$set(engine = "R", tidy = FALSE, prompt = TRUE, cache = FALSE,
-+                fig.width = 6.5 * 0.8, fig.height = 4.5 * 0.8, 
-+                fig.fullwidth = TRUE, fig.path = "Figures/", 
++                fig.width = 6.5 * 0.8, fig.height = 4.5 * 0.8,
++                fig.fullwidth = TRUE, fig.path = "Figures/",
 +                fig.ext = c("pdf", "eps", "jpg", "tiff"), dpi = 600)
 > knitr::render_sweave()  # use Sweave environments
 > knitr::set_header(highlight = "")  # do not \usepackage{Sweave}
@@ -46,6 +46,14 @@ Loading required package: tensorflow
 Loading required package: keras
 Loading required package: tfprobability
 Loading required package: deepregression
+2023-03-13 10:41:25.363372: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2023-03-13 10:41:25.524944: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
+2023-03-13 10:41:25.524981: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2023-03-13 10:41:25.552152: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2023-03-13 10:41:26.088567: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
+2023-03-13 10:41:26.088631: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
+2023-03-13 10:41:26.088649: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
 R> library("ggplot2")
 R> library("tsdl") # available from GitHub (FinYang/tsdl)
 R> library("reticulate")
@@ -84,9 +92,12 @@ The following object is masked from 'package:ggplot2':
 R> 
 R> theme_set(theme_bw() + theme(legend.position = "top"))
 R> 
+R> outdir <- "../Figures"
+R> if (!dir.exists(outdir)) dir.create(outdir)
+R> 
 R> # Params ------------------------------------------------------------------
 R> 
-R> bpath <- "."
+R> bpath <- "../Data"
 R> nr_words <- 1e4
 R> embedding_size <- 1e2
 R> maxlen <- 1e2
@@ -105,14 +116,6 @@ R> train <- data_list[[1]]
 R> test <- data_list[[2]]
 R> 
 R> tokenizer <- text_tokenizer(num_words = nr_words)
-2023-02-28 12:49:02.404844: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
-To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2023-02-28 12:49:02.566109: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
-2023-02-28 12:49:02.566156: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2023-02-28 12:49:02.591556: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2023-02-28 12:49:03.092481: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
-2023-02-28 12:49:03.092549: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
-2023-02-28 12:49:03.092557: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
 R> mov <- readRDS(file.path(bpath, "mov_ov.RDS"))
 R> tokenizer |> fit_text_tokenizer(mov)
 R> words <- readRDS(file.path(bpath, "words.RDS"))
@@ -125,12 +128,12 @@ R>
 R> ## ----setting-up-dctms, eval=!ATMonly------------------------------------------
 R> opt <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
 R> (m_fm <- cotramNN(formula = fm, data = train, optimizer = opt))
-2023-02-28 12:49:04.113335: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
-2023-02-28 12:49:04.113378: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
-2023-02-28 12:49:04.113396: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (lucas-cx1): /proc/driver/nvidia/version does not exist
-2023-02-28 12:49:04.113687: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+2023-03-13 10:41:27.959147: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
+2023-03-13 10:41:27.959183: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
+2023-03-13 10:41:27.959203: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (lucas-cx1): /proc/driver/nvidia/version does not exist
+2023-03-13 10:41:27.959449: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-	 Count outcome deep conditional transformation model
+	 Untrained count outcome deep conditional transformation model
 
 Call:
 deeptrafo(formula = formula, data = data, response_type = response_type, 
@@ -144,13 +147,11 @@ Shifting:  ~0 + s(budget, df = 6) + popularity
 
 Shift coefficients:
 s(budget, df = 6)1 s(budget, df = 6)2 s(budget, df = 6)3 s(budget, df = 6)4 
-             0.557             -0.702              0.760             -0.181 
+           -0.4760            -0.7326            -0.6233            -0.4061 
 s(budget, df = 6)5 s(budget, df = 6)6 s(budget, df = 6)7 s(budget, df = 6)8 
-            -0.201             -0.687              0.670              0.671 
+           -0.4309            -0.5447             0.6729             0.7376 
 s(budget, df = 6)9         popularity 
-            -0.377             -0.888 
-/home/stigler/anaconda3/envs/r-reticulate/lib/python3.8/site-packages/keras/initializers/initializers_v2.py:120: UserWarning: The initializer RandomNormal is unseeded and being called multiple times, which will return identical values  each time (even if the initializer is unseeded). Please update your code to provide a seed to the initializer, or avoid using the same initalizer instance more than once.
-  warnings.warn(
+            0.0947             1.2447 
 R> 
 R> 
 R> ## ----fitting-dctms, eval=!ATMonly---------------------------------------------
@@ -158,11 +159,11 @@ R> m_fm_hist <- fit(m_fm, epochs = 1e3, validation_split = 0.1, batch_size = 64,
 +                   verbose = FALSE)
 R> unlist(coef(m_fm, which = "shifting"))
 s(budget, df = 6)1 s(budget, df = 6)2 s(budget, df = 6)3 s(budget, df = 6)4 
-           0.38339           -0.28824           -0.04608           -0.03992 
+           0.38548           -0.29044           -0.04622           -0.04058 
 s(budget, df = 6)5 s(budget, df = 6)6 s(budget, df = 6)7 s(budget, df = 6)8 
-           0.00616           -0.02692           -0.00511            0.01355 
+           0.00609           -0.02748           -0.00528            0.01543 
 s(budget, df = 6)9         popularity 
-          -0.36587           -0.82771 
+          -0.36894           -0.83131 
 R> 
 R> 
 R> ## ----plot-hist, fig.width=8.1, fig.height=4.05, eval=!ATMonly-----------------
@@ -195,7 +196,7 @@ R> ggpubr::ggarrange(
 +    common.legend = FALSE
 +  )
 R> 
-R> ggsave("plot-hist.pdf", width = 8.1, height = 4.05)
+R> ggsave(file.path(outdir, "plot-hist.pdf"), width = 8.1, height = 4.05)
 R> 
 R> ## ----working-with-neural-networks, eval=!ATMonly------------------------------
 R> embd_mod <- function(x) x |>
@@ -221,17 +222,17 @@ R> ## ----ensembling-dctms, eval=!ATMonly---------------------------------------
 R> ens_deep <- ensemble(m_deep, n_ensemble = 3, epochs = 50, batch_size = 64,
 +                       verbose = FALSE)
 Fitting member 1 ...
-Done in 4.6  mins 
+Done in 4.79  mins 
 Fitting member 2 ...
-Done in 4.91  mins 
+Done in 4.78  mins 
 Fitting member 3 ...
-Done in 4.86  mins 
+Done in 4.92  mins 
 R> 
 R> 
 R> ## ----ensembling-dctms-methods, eval=!ATMonly----------------------------------
 R> unlist(logLik(ens_deep, newdata = test, convert_fun = \(x) - mean(x)))
 members1 members2 members3     mean ensemble 
-   -8.28    -8.50    -8.32    -8.37    -8.35 
+   -8.30    -8.56    -8.36    -8.41    -8.28 
 R> 
 R> ## ----ensembling-dctms-plot-prereq, eval=!ATMonly------------------------------
 R> d <- deeptrafo:::.call_for_all_members(
@@ -247,7 +248,7 @@ R> nd <- data.frame(
 R> 
 R> 
 R> ## ----ensembling-dctms-plot, eval=!ATMonly-------------------------------------
-R> pdf("ensembling-dctms-plot.pdf", height = 4.5 * 0.8, width = 6.5 * 0.8)
+R> pdf(file.path(outdir, "ensembling-dctms-plot.pdf"), height = 4.5 * 0.8, width = 6.5 * 0.8)
 R> plot(pdat$value, pdat$V2, type = "l", ylim = range(pdat[, -1]),
 +       xlab = "log(1 + bugdet)", ylab = "partial effect", col = "gray80", lty = 2,
 +       las = 1)
@@ -269,16 +270,16 @@ R>
 R> ## ----cross-validating-dctms, fig.width=9, fig.height=4.05, eval=!ATMonly------
 R> cv_deep <- cv(m_deep, epochs = 50, cv_folds = 5, batch_size = 64)
 Fitting Fold  1  ... 
-Done in 4.11  mins 
+Done in 4.01  mins 
 Fitting Fold  2  ... 
-Done in 4.25  mins 
+Done in 4.26  mins 
 Fitting Fold  3  ... 
-Done in 4.22  mins 
+Done in 3.84  mins 
 Fitting Fold  4  ... 
-Done in 3.88  mins 
+Done in 4.27  mins 
 Fitting Fold  5  ... 
-Done in 3.95  mins 
-R> pdf("cross-validating-dctms.pdf", height = 4.5, width = 9)
+Done in 4.48  mins 
+R> pdf(file.path(outdir, "cross-validating-dctms.pdf"), height = 4.5, width = 9)
 R> plot_cv(cv_deep)
 R> dev.off()
 pdf 
@@ -379,14 +380,14 @@ R> mods <- list("unconditional" = m_0, "tabular only" = m_tab,
 +               "text only" = m_text, "semi-structured" = m_semi)
 R> do.call("cbind", lapply(mods, bci))
     unconditional tabular only text only semi-structured
-nll         0.531        0.516     0.437           0.423
-lwr         0.501        0.486     0.390           0.372
-upr         0.562        0.549     0.486           0.478
+nll         0.531        0.516     0.436           0.423
+lwr         0.501        0.486     0.389           0.371
+upr         0.562        0.549     0.485           0.478
 R> 
 R> c("tabular only" = unlist(unname(coef(m_tab))),
 +    "semi-structured" = unlist(unname(coef(m_semi))))
    tabular only semi-structured 
-          -0.43           -0.32 
+         -0.430          -0.318 
 R> 
 R> 
 R> ## ----embedding-pca-plot-------------------------------------------------------
@@ -449,7 +450,7 @@ R>
 R> ggpubr::ggarrange(gp1, gp2, common.legend = TRUE)
 Warning message:
 ggrepel: 2 unlabeled data points (too many overlaps). Consider increasing max.overlaps 
-R> ggsave(file = "embedding-pca.pdf", height = 4, width = 8)
+R> ggsave(file = file.path(outdir, "embedding-pca.pdf"), height = 4, width = 8)
 Warning message:
 ggrepel: 14 unlabeled data points (too many overlaps). Consider increasing max.overlaps 
 R> 
@@ -470,34 +471,31 @@ R> gr <- seq(min_supp ,max_supp , length.out = n_gr)
 R> time_var <- seq(as.Date("1971-01-01"), as.Date("1990-12-01"), by = "month")
 R> d_ts <- data.table(time = time_var, y = as.numeric(d_ts))
 R> d_ts[, month := factor(month(time))]
-R> d_ts[, paste0("y_lag_", 1:p) := shift(y, n = 1:p, type = "lag", fill = NA)]
-R> d_ts <- na.omit(d_ts)
-R> len_y <- nrow(d_ts)
-R> 
+R> d_ts_lag <- d_ts[, paste0("y_lag_", 1:p) := shift(y, n = 1:p, type = "lag", fill = NA)]
+R> d_ts_lag <- na.omit(d_ts_lag)
 R> 
 R> ## ----formula-interface_ATM----------------------------------------------------
 R> lags <- c(paste0("y_lag_", 1:p, collapse = "+"))
-R> atplags <- c(paste0("atplag(y_lag_", 1:p, ")", collapse = "+"))
-R> (fm_atm <- as.formula(paste0("y |", lags, "~ 0 + month +", atplags)))
-y | y_lag_1 + y_lag_2 + y_lag_3 ~ 0 + month + atplag(y_lag_1) + 
-    atplag(y_lag_2) + atplag(y_lag_3)
-R> (fm_atp <- as.formula(paste0("y ~ 0 + month +", atplags)))
-y ~ 0 + month + atplag(y_lag_1) + atplag(y_lag_2) + atplag(y_lag_3)
+R> (fm_atm <- as.formula(paste0("y |", lags, "~ 0 + month + atplag(1:p)")))
+y | y_lag_1 + y_lag_2 + y_lag_3 ~ 0 + month + atplag(1:p)
+R> (fm_atp <- as.formula(paste0("y ~ 0 + month + atplag(1:p)")))
+y ~ 0 + month + atplag(1:p)
 R> (fm_colr <- as.formula(paste0("y ~ 0 + month + ", lags)))
 y ~ 0 + month + y_lag_1 + y_lag_2 + y_lag_3
 R> 
 R> 
 R> ## ----fitting-ATMs-------------------------------------------------------------
-R> mod_fun <- \(fm) ColrNN(fm, data = d_ts, trafo_options = trafo_control(
+R> mod_fun <- function(fm, d) ColrNN(fm, data = d, trafo_options = trafo_control(
 +    order_bsp = M, support = c(min_supp, max_supp)), tf_seed = 1,
 +    optimizer = optimizer_adam(learning_rate = 0.01))
 R> 
-R> mods <- lapply(list(fm_atm, fm_atp, fm_colr), mod_fun)
+R> mods <- c(lapply(list(fm_atm, fm_atp), mod_fun, d = d_ts),
++            lapply(list(fm_colr), mod_fun, d = d_ts_lag))
 R> 
 R> fit_fun <- \(m) m |> fit(epochs = ep, callbacks = list(
 +    callback_early_stopping(patience = 50, monitor = "loss"),
 +    callback_reduce_lr_on_plateau(patience = 20, factor = 0.9, monitor = "loss")),
-+    batch_size = nrow(d_ts), validation_split = 0, verbose = FALSE)
++    batch_size = nrow(d_ts_lag), validation_split = 0, verbose = FALSE)
 R> 
 R> lapply(mods, \(m) {
 +    mhist <- fit_fun(m)
@@ -512,8 +510,8 @@ loss: 1.471
 [[2]]
 
 Final epoch (plot to see history):
-loss: 1.611
-  lr: 0.000002427 
+loss: 1.612
+  lr: 0.00000177 
 
 [[3]]
 
@@ -524,12 +522,15 @@ loss: 1.489
 R> 
 R> 
 R> ## ----in-sample-logLiks-ATM----------------------------------------------------
-R> t_idx <- seq(as.Date("1977-06-01"), as.Date("1978-05-01"), by = "month")
-R> ndl <- d_ts[d_ts$time %in% t_idx]
-R> structure(unlist(lapply(mods, logLik, newdata = ndl)), names = c(
+R> t_span_one <- seq(as.Date("1977-03-01"), as.Date("1978-05-01"), by = "month")
+R> ndl <- d_ts[d_ts$time %in% t_span_one]
+R> t_span_two <- seq(as.Date("1977-06-01"), as.Date("1978-05-01"), by = "month")
+R> ndl_lag <- d_ts_lag[d_ts_lag$time %in% t_span_two]
+R> structure(unlist(c(lapply(mods[1:2], logLik, newdata = ndl),
++                     lapply(mods[3], logLik, newdata = ndl_lag))), names = c(
 +    "ATM", paste0("AT(", p, ")"), "Colr"))
   ATM AT(3)  Colr 
--19.5 -22.5 -20.1 
+-19.4 -22.5 -20.1 
 R> 
 R> 
 R> ## ----in_sample_cond_densities_ATMs--------------------------------------------
@@ -538,23 +539,51 @@ R> m_atm <- mods[[1]]
 R> m_atp <- mods[[2]]
 R> m_colr <- mods[[3]]
 R> 
-R> nd <- ndt <-  d_ts |> dplyr::mutate(y_true = y, y = list(gr)) |>
+R> # colr
+R> nd <- ndt <- d_ts_lag |> dplyr::mutate(y_true = y, y = list(gr)) |>
 +    tidyr::unnest(y)
-R> nd$d_atp <- c(predict(m_atp, newdata = nd, type = "pdf"))
-R> nd$d_atm <- c(predict(m_atm, newdata = nd, type = "pdf"))
 R> nd$d_colr <- c(predict(m_colr, newdata = nd, type = "pdf"))
+R> 
+R> pg <- TRUE
+R> attr(pg, "rname") <- "y_true"
+R> attr(pg, "y") <- "y"
+R> 
+R> # atp and atm
+R> nd_atp <- ndt_atp <- d_ts |> dplyr::mutate(y_true = y, y = list(gr)) |>
++    tidyr::unnest(y)
+R> nd_atp_lag <- subset(nd_atp, time >= "1971-04-01")
+R> nd_atp <- nd_atp[order(nd_atp$y, nd_atp$time),]
+R> nd_atp_lag <- nd_atp_lag[order(nd_atp_lag$y, nd_atp_lag$time),]
+R> nd_atp_lag$d_atp <- c(predict(m_atp, newdata = nd_atp, type = "pdf",
++                                pred_grid = pg))
+R> nd_atp_lag$d_atm <- c(predict(m_atm, newdata = nd_atp, type = "pdf",
++                                pred_grid = pg))
+R> 
+R> nd <- merge(nd, nd_atp_lag)
+R> 
 R> d_density <- nd |>
 +    tidyr::gather("method", "y_density", d_atm, d_atp, d_colr) |>
 +    dplyr::mutate(y_grid = y) |> as.data.table()
 R> 
 R> # In-sample trafos
-R> ndt$t_atp <- c(predict(m_atp, newdata = ndt, type = "trafo"))
-R> ndt$t_atm <- c(predict(m_atm, newdata = ndt, type = "trafo"))
+R> 
+R> # colr
 R> ndt$t_colr <- c(predict(m_colr, newdata = ndt, type = "trafo"))
 R> 
+R> # atp and atm
+R> ndt_atp_lag <- subset(ndt_atp, time >= "1971-04-01")
+R> ndt_atp <- ndt_atp[order(ndt_atp$y, ndt_atp$time),]
+R> ndt_atp_lag <- nd_atp_lag[order(nd_atp_lag$y, nd_atp_lag$time),]
+R> ndt_atp_lag$t_atp <- c(predict(m_atp, newdata = ndt_atp, type = "trafo",
++                                 pred_grid = pg))
+R> ndt_atp_lag$t_atm <- c(predict(m_atm, newdata = ndt_atp, type = "trafo",
++                                 pred_grid = pg))
+R> 
+R> ndt <- merge(ndt, ndt_atp_lag)
 R> 
 R> ## ----plot-ATMs, fig.width=10.8, fig.height=8.1--------------------------------
-R> d_sub_dens <- d_density[time %in% t_idx]
+R> plot_period <- seq(as.Date("1983-06-01"), as.Date("1984-05-01"), by = "month")
+R> d_sub_dens <- d_density[time %in% plot_period]
 R> 
 R> Sys.setlocale("LC_ALL", "en_GB.UTF-8")
 [1] "LC_CTYPE=en_GB.UTF-8;LC_NUMERIC=C;LC_TIME=en_GB.UTF-8;LC_COLLATE=en_GB.UTF-8;LC_MONETARY=en_GB.UTF-8;LC_MESSAGES=en_US.UTF-8;LC_PAPER=de_CH.UTF-8;LC_NAME=C;LC_ADDRESS=C;LC_TELEPHONE=C;LC_MEASUREMENT=de_CH.UTF-8;LC_IDENTIFICATION=C"
@@ -581,13 +610,13 @@ R> g_dens <- ggplot() +
 +          panel.grid.minor = element_blank(),
 +          strip.background = element_blank(),
 +          panel.border = element_blank(),
-+          text = element_text(size = 13), 
++          text = element_text(size = 13),
 +          legend.position = "none",
 +          rect = element_rect(fill = "transparent"))
 R> 
 R> trafos <- ndt |>
 +    tidyr::gather("method", "h", t_atm, t_atp, t_colr) |>
-+    dplyr::filter(time %in% t_idx) |>
++    dplyr::filter(time %in% plot_period) |>
 +    dplyr::mutate(month = ordered(
 +      format(as.Date(time), format = "%b %Y"),
 +      levels = format(sort(unique(as.Date(time))), format = "%b %Y")))
@@ -608,7 +637,7 @@ R> g_trafo <- ggplot(trafos) +
 R> 
 R> (p1 <- g_dens / g_trafo)
 R> 
-R> ggsave("plot-ATMs.pdf", p1, width = 10.8, height = 8.1)
+R> ggsave(file.path(outdir, "plot-ATMs.pdf"), p1, width = 10.8, height = 8.1)
 R> 
 R> ## ----handling-censored-responses, eval=!ATMonly-------------------------------
 R> deeptrafo:::response(y = c(0L, 1L))
@@ -686,8 +715,8 @@ R> fit(m, batch_size = n, epochs = 5e3, validation_split = NULL,
 +      callbacks = list(callback_reduce_lr_on_plateau(monitor = "loss")),
 +      verbose = FALSE)
 R> abs(unlist(coef(m)) - coef(Lm(y ~ x, data = d)))
-    x 
-0.023 
+     x 
+0.0237 
 R> 
 R> 
 R> ## ----alternative-interface, eval=!ATMonly-------------------------------------
@@ -695,7 +724,7 @@ R> dord <- data.frame(Y = ordered(sample.int(6, 100, TRUE)),
 +                     X = rnorm(100), Z = rnorm(100))
 R> ontram(response = ~ Y, intercept = ~ X, shift = ~ 0 + s(Z, df = 3),
 +         data = dord)
-	 Ordinal outcome deep conditional transformation model
+	 Untrained ordinal outcome deep conditional transformation model
 
 Call:
 deeptrafo(formula = fml, data = data, response_type = response_type, 
@@ -729,10 +758,10 @@ R> fit(m, batch_size = 1e4, epochs = 20, validation_split = 0, callbacks = list(
 R> bl <- unlist(coef(m, which = "interacting"))
 R> - (unlist(coef(m))[1:5] + bl[1]) / bl[2]
 fac(X)1 fac(X)2 fac(X)3 fac(X)4 fac(X)5 
--0.0204  0.9986 -1.0156 -0.0249  0.0477 
+-0.0203  0.9989 -1.0158 -0.0250  0.0477 
 R> logLik(m, batch_size = 1e4, convert_fun = \(x) - mean(x))
 [1] -1.42
 R> 
 > proc.time()
    user  system elapsed 
-  10047    1234    3062 
+  10282    1275    3138 

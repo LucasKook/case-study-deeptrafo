@@ -13,5 +13,5 @@ if (!require(tsdl))
   remotes::install_github("FinYang/tsdl")
 
 remotes::install_github("neural-structured-additive-learning/safareg")
-remotes::install_github("neural-structured-additive-learning/deepregression@78ea251c2d859d2c5cb5f0f2b22109aa7882d2ba")
-remotes::install_github("neural-structured-additive-learning/deeptrafo@28cf0cfc725f6d7a0ba1c8ad237941b0e48c679d")
+remotes::install_github("neural-structured-additive-learning/deepregression@e3218777f94c7fda05b0e54ad90dae3a08daf184")
+remotes::install_github("neural-structured-additive-learning/deeptrafo@83c4d8bbb5a7543f8a9ecc82e4c283883aa944f1")
