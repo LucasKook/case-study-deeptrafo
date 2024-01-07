@@ -12,6 +12,10 @@ if(length(new_pkg)) install.packages(new_pkg)
 if (!require(tsdl))
   remotes::install_github("FinYang/tsdl")
 
+remotes::install_version("torch", "0.11.0")
 remotes::install_github("neural-structured-additive-learning/safareg")
-remotes::install_github("neural-structured-additive-learning/deepregression@e3218777f94c7fda05b0e54ad90dae3a08daf184")
-remotes::install_github("neural-structured-additive-learning/deeptrafo@83c4d8bbb5a7543f8a9ecc82e4c283883aa944f1")
+remotes::install_github("neural-structured-additive-learning/deepregression@92166e218f54e3ab30c2fee3a8cab1909140d30e", upgrade = "never")
+remotes::install_github("neural-structured-additive-learning/deeptrafo@93afb9117592ef3d8ceb4afe807ff7207aa9f2f4", upgrade = "never")
+
+library("deeptrafo")
+reticulate::py_install(packages = "gensim")

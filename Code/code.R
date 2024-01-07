@@ -565,19 +565,86 @@ dord <- data.frame(Y = ordered(sample.int(6, 100, TRUE)),
 ontram(response = ~ Y, intercept = ~ X, shift = ~ 0 + s(Z, df = 3),
        data = dord)
 
+## ----word2vec-----------------------------------------------------------------
+embedding_dim <- 300
+
+if (file.exists("word2vec_embd_matrix.RDS")) {
+
+  embedding_matrix <- readRDS("word2vec_embd_matrix.RDS")
+  vocab_size <- nrow(embedding_matrix)
+
+} else {
+
+  # py_install(packages = "gensim")
+  gensim <- import("gensim")
+  # download embedding
+  # https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing
+  model <- gensim$models$KeyedVectors$load_word2vec_format(
+    "../Data/GoogleNews-vectors-negative300.bin", binary = TRUE)
+
+  vocab_size <- length(words$word)
+  embedding_matrix <- matrix(0, nrow = vocab_size, ncol = embedding_dim)
+
+  names_model <- names(model$key_to_index)
+  for (i in 1:vocab_size) {
+    word <- words$word[i]
+    if (word %in% names_model) {
+      embedding_matrix[i, ] <- model[[word]]
+    }
+  }
+  saveRDS(embedding_matrix, file = "word2vec_embd_matrix.RDS")
+
+}
+
+w2v_mod <- function(x) x |>
+  layer_embedding(input_dim = vocab_size, output_dim = embedding_dim,
+                  weights = list(embedding_matrix), trainable = FALSE) |>
+  layer_flatten() |>
+  layer_dense(units = 1, activation = 'sigmoid')
+
+fm_w2v <- update(fm, . ~ . + shallow(texts))
+m_w2v <- deeptrafo(fm_w2v, data = train,
+                   list_of_deep_models = list(shallow = w2v_mod))
+
+dhist <- fit(m_w2v, epochs = 200, validation_split = 0.1, batch_size = 32,
+             callbacks = list(callback_early_stopping(patience = 5)),
+             verbose = FALSE)
+
+bci(m_w2v)
+
+w2v2_mod <- function(x) x |>
+  layer_embedding(input_dim = vocab_size, output_dim = embedding_dim,
+                  weights = list(embedding_matrix), trainable = FALSE) |>
+  layer_conv_1d(filters = 128, kernel_size = 5, activation = 'relu') |>
+  layer_max_pooling_1d(pool_size = 5) |>
+  layer_conv_1d(filters = 128, kernel_size = 5, activation = 'relu') |>
+  layer_global_max_pooling_1d() |>
+  layer_dense(units = 128, activation = 'relu') |>
+  layer_dropout(rate = 0.5) |>
+  layer_dense(units = 1, activation = 'sigmoid')
+
+fm_w2v2 <- update(fm, . ~ . + deep(texts))
+m_w2v2 <- deeptrafo(fm_w2v2, data = train,
+                    list_of_deep_models = list(deep = w2v2_mod))
+
+dhist <- fit(m_w2v2, epochs = 220, validation_split = 0.1, batch_size = 32,
+             callbacks = list(callback_early_stopping(patience = 5)),
+             verbose = FALSE)
+
+bci(m_w2v2)
 
 ## ----large-factor-models------------------------------------------------------
-set.seed(0)
-n <- 1e6
-nlevs <- 1e3
-X <- factor(sample.int(nlevs, n, TRUE))
-Y <- (X == 2) - (X == 3) + rnorm(n)
-d <- data.frame(Y = Y, X = X)
-m <- LmNN(Y ~ 0 + fac(X), data = d, additional_processor = list(
-  fac = fac_processor), optimizer = optimizer_adam(learning_rate = 1e-2))
-fit(m, batch_size = 1e4, epochs = 20, validation_split = 0, callbacks = list(
-  callback_early_stopping("loss", patience = 3),
-  callback_reduce_lr_on_plateau("loss", 0.9, 2)), verbose = FALSE)
-bl <- unlist(coef(m, which = "interacting"))
-- (unlist(coef(m))[1:5] + bl[1]) / bl[2]
-logLik(m, batch_size = 1e4, convert_fun = \(x) - mean(x))
+# set.seed(0)
+# n <- 1e6
+# nlevs <- 1e3
+# X <- factor(sample.int(nlevs, n, TRUE))
+# Y <- (X == 2) - (X == 3) + rnorm(n)
+# d <- data.frame(Y = Y, X = X)
+# m <- LmNN(Y ~ 0 + fac(X), data = d, additional_processor = list(
+#   fac = fac_processor), optimizer = optimizer_adam(learning_rate = 1e-2))
+# fit(m, batch_size = 1e4, epochs = 20, validation_split = 0, callbacks = list(
+#   callback_early_stopping("loss", patience = 3),
+#   callback_reduce_lr_on_plateau("loss", 0.9, 2)), verbose = FALSE)
+# bl <- unlist(coef(m, which = "interacting"))
+# - (unlist(coef(m))[1:5] + bl[1]) / bl[2]
+# logLik(m, batch_size = 1e4, convert_fun = \(x) - mean(x))
