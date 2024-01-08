@@ -66,6 +66,13 @@ mov <- readRDS(file.path(bpath, "mov_ov.RDS"))
 tokenizer |> fit_text_tokenizer(mov)
 words <- readRDS(file.path(bpath, "words.RDS"))
 
+ggplot(data.frame(vote_count = train$vote_count), aes(x = vote_count)) +
+  stat_ecdf() +
+  geom_vline(xintercept = test$vote_count[1], color = "darkblue", linetype = 2) +
+  labs(y = "ECDF (training data)") +
+  theme(text = element_text(size = 13.5))
+
+ggsave(file.path(outdir, "vote-count.pdf"), width = 4, height = 3)
 
 ## ----formula-interface, eval=!ATMonly-----------------------------------------
 fm <- vote_count | genreAction ~ 0 + s(budget, df = 6) + popularity
