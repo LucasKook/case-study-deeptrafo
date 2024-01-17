@@ -1,10 +1,10 @@
 dependencies:
 	cd Code && Rscript dependencies.R
 
-data: dependencies
+data: 
 	cd Code && Rscript movies.R
 
-repro: data
+repro: 
 	(cd Code && R CMD BATCH --vanilla code.R &)
 
 all: dependencies data repro

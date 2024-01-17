@@ -66,6 +66,13 @@ mov <- readRDS(file.path(bpath, "mov_ov.RDS"))
 tokenizer |> fit_text_tokenizer(mov)
 words <- readRDS(file.path(bpath, "words.RDS"))
 
+ggplot(data.frame(vote_count = train$vote_count), aes(x = vote_count)) +
+  stat_ecdf() +
+  geom_vline(xintercept = test$vote_count[1], color = "darkblue", linetype = 2) +
+  labs(y = "ECDF (training data)") +
+  theme(text = element_text(size = 13.5))
+
+ggsave(file.path(outdir, "vote-count.pdf"), width = 4, height = 3)
 
 ## ----formula-interface, eval=!ATMonly-----------------------------------------
 fm <- vote_count | genreAction ~ 0 + s(budget, df = 6) + popularity
@@ -565,6 +572,79 @@ dord <- data.frame(Y = ordered(sample.int(6, 100, TRUE)),
 ontram(response = ~ Y, intercept = ~ X, shift = ~ 0 + s(Z, df = 3),
        data = dord)
 
+## ----word2vec-----------------------------------------------------------------
+
+### Load embedding
+embedding_dim <- 300
+
+if (file.exists("word2vec_embd_matrix.RDS")) {
+
+  embedding_matrix <- readRDS("word2vec_embd_matrix.RDS")
+  vocab_size <- nrow(embedding_matrix)
+
+} else {
+
+  # py_install(packages = "gensim")
+  gensim <- import("gensim")
+  # download embedding
+  # https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing
+  model <- gensim$models$KeyedVectors$load_word2vec_format(
+    "../Data/GoogleNews-vectors-negative300.bin", binary = TRUE)
+
+  vocab_size <- length(words$word)
+  embedding_matrix <- matrix(0, nrow = vocab_size, ncol = embedding_dim)
+
+  names_model <- names(model$key_to_index)
+  for (i in 1:vocab_size) {
+    word <- words$word[i]
+    if (word %in% names_model) {
+      embedding_matrix[i, ] <- model[[word]]
+    }
+  }
+  saveRDS(embedding_matrix, file = "word2vec_embd_matrix.RDS")
+
+}
+
+### Shallow
+w2v_mod <- function(x) x |>
+  layer_embedding(input_dim = vocab_size, output_dim = embedding_dim,
+                  weights = list(embedding_matrix), trainable = FALSE) |>
+  layer_flatten() |>
+  layer_dense(units = 1)
+
+fm_w2v <- action ~ 0 + shallow(texts)
+m_w2v <- deeptrafo(fm_w2v, data = train,
+                   list_of_deep_models = list(shallow = w2v_mod),
+                   optimizer = optimizer_adam(learning_rate = 1e-5))
+
+dhist <- fit(m_w2v, epochs = 200, validation_split = 0.1, batch_size = 32,
+             callbacks = list(callback_early_stopping(patience = 5)),
+             verbose = FALSE)
+
+bci(m_w2v)
+
+### Deep
+w2v2_mod <- function(x) x |>
+  layer_embedding(input_dim = vocab_size, output_dim = embedding_dim,
+                  weights = list(embedding_matrix), trainable = FALSE) |>
+  layer_conv_1d(filters = 128, kernel_size = 5, activation = "relu") |>
+  layer_max_pooling_1d(pool_size = 5) |>
+  layer_conv_1d(filters = 128, kernel_size = 5, activation = "relu") |>
+  layer_global_max_pooling_1d() |>
+  layer_dense(units = 128, activation = "relu") |>
+  layer_dropout(rate = 0.5) |>
+  layer_dense(units = 1, activation = "sigmoid")
+
+fm_w2v2 <- action ~ 0 + deep(texts)
+m_w2v2 <- deeptrafo(fm_w2v2, data = train,
+                    list_of_deep_models = list(deep = w2v2_mod),
+                    optimizer = optimizer_adam(learning_rate = 1e-5))
+
+dhist <- fit(m_w2v2, epochs = 200, validation_split = 0.1, batch_size = 32,
+             callbacks = list(callback_early_stopping(patience = 5)),
+             verbose = FALSE)
+
+bci(m_w2v2)
 
 ## ----large-factor-models------------------------------------------------------
 set.seed(0)

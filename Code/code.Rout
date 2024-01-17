@@ -46,14 +46,6 @@ Loading required package: tensorflow
 Loading required package: keras
 Loading required package: tfprobability
 Loading required package: deepregression
-2023-03-13 10:41:25.363372: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
-To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2023-03-13 10:41:25.524944: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
-2023-03-13 10:41:25.524981: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2023-03-13 10:41:25.552152: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2023-03-13 10:41:26.088567: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
-2023-03-13 10:41:26.088631: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
-2023-03-13 10:41:26.088649: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
 R> library("ggplot2")
 R> library("tsdl") # available from GitHub (FinYang/tsdl)
 R> library("reticulate")
@@ -63,7 +55,6 @@ R> library("patchwork")
 R> library("ggridges")
 R> library("moments")
 R> library("lubridate")
-Loading required package: timechange
 
 Attaching package: 'lubridate'
 
@@ -89,6 +80,7 @@ The following object is masked from 'package:ggplot2':
 
     unit
 
+Loading required package: mvtnorm
 R> 
 R> theme_set(theme_bw() + theme(legend.position = "top"))
 R> 
@@ -116,10 +108,25 @@ R> train <- data_list[[1]]
 R> test <- data_list[[2]]
 R> 
 R> tokenizer <- text_tokenizer(num_words = nr_words)
+2024-01-09 10:05:31.502291: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2024-01-09 10:05:31.688770: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
+2024-01-09 10:05:31.688809: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2024-01-09 10:05:31.714999: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2024-01-09 10:05:32.260498: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
+2024-01-09 10:05:32.260573: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
+2024-01-09 10:05:32.260582: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
 R> mov <- readRDS(file.path(bpath, "mov_ov.RDS"))
 R> tokenizer |> fit_text_tokenizer(mov)
 R> words <- readRDS(file.path(bpath, "words.RDS"))
 R> 
+R> ggplot(data.frame(vote_count = train$vote_count), aes(x = vote_count)) +
++    stat_ecdf() +
++    geom_vline(xintercept = test$vote_count[1], color = "darkblue", linetype = 2) +
++    labs(y = "ECDF (training data)") +
++    theme(text = element_text(size = 13.5))
+R> 
+R> ggsave(file.path(outdir, "vote-count.pdf"), width = 4, height = 3)
 R> 
 R> ## ----formula-interface, eval=!ATMonly-----------------------------------------
 R> fm <- vote_count | genreAction ~ 0 + s(budget, df = 6) + popularity
@@ -128,18 +135,15 @@ R>
 R> ## ----setting-up-dctms, eval=!ATMonly------------------------------------------
 R> opt <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
 R> (m_fm <- cotramNN(formula = fm, data = train, optimizer = opt))
-2023-03-13 10:41:27.959147: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
-2023-03-13 10:41:27.959183: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
-2023-03-13 10:41:27.959203: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (lucas-cx1): /proc/driver/nvidia/version does not exist
-2023-03-13 10:41:27.959449: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+2024-01-09 10:05:33.808811: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory; LD_LIBRARY_PATH: /usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server:/usr/lib/R/lib:/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/default-java/lib/server
+2024-01-09 10:05:33.808853: W tensorflow/stream_executor/cuda/cuda_driver.cc:263] failed call to cuInit: UNKNOWN ERROR (303)
+2024-01-09 10:05:33.808871: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (lucas-cx1): /proc/driver/nvidia/version does not exist
+2024-01-09 10:05:33.809121: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 	 Untrained count outcome deep conditional transformation model
 
 Call:
-deeptrafo(formula = formula, data = data, response_type = response_type, 
-    order = order, addconst_interaction = addconst_interaction, 
-    latent_distr = latent_distr, monitor_metrics = monitor_metrics, 
-    trafo_options = trafo_options, optimizer = ..1)
+cotramNN(formula = fm, data = train, optimizer = opt)
 
 Interacting:  vote_count | genreAction 
 
@@ -159,11 +163,11 @@ R> m_fm_hist <- fit(m_fm, epochs = 1e3, validation_split = 0.1, batch_size = 64,
 +                   verbose = FALSE)
 R> unlist(coef(m_fm, which = "shifting"))
 s(budget, df = 6)1 s(budget, df = 6)2 s(budget, df = 6)3 s(budget, df = 6)4 
-           0.38548           -0.29044           -0.04622           -0.04058 
+           0.38557           -0.29035           -0.04621           -0.04052 
 s(budget, df = 6)5 s(budget, df = 6)6 s(budget, df = 6)7 s(budget, df = 6)8 
-           0.00609           -0.02748           -0.00528            0.01543 
+           0.00610           -0.02743           -0.00526            0.01523 
 s(budget, df = 6)9         popularity 
-          -0.36894           -0.83131 
+          -0.36896           -0.83196 
 R> 
 R> 
 R> ## ----plot-hist, fig.width=8.1, fig.height=4.05, eval=!ATMonly-----------------
@@ -222,17 +226,17 @@ R> ## ----ensembling-dctms, eval=!ATMonly---------------------------------------
 R> ens_deep <- ensemble(m_deep, n_ensemble = 3, epochs = 50, batch_size = 64,
 +                       verbose = FALSE)
 Fitting member 1 ...
-Done in 4.79  mins 
+Done in 5.34  mins 
 Fitting member 2 ...
-Done in 4.78  mins 
+Done in 5.54  mins 
 Fitting member 3 ...
-Done in 4.92  mins 
+Done in 5.41  mins 
 R> 
 R> 
 R> ## ----ensembling-dctms-methods, eval=!ATMonly----------------------------------
 R> unlist(logLik(ens_deep, newdata = test, convert_fun = \(x) - mean(x)))
 members1 members2 members3     mean ensemble 
-   -8.30    -8.56    -8.36    -8.41    -8.28 
+   -8.83    -9.06    -8.95    -8.94    -8.92 
 R> 
 R> ## ----ensembling-dctms-plot-prereq, eval=!ATMonly------------------------------
 R> d <- deeptrafo:::.call_for_all_members(
@@ -270,13 +274,13 @@ R>
 R> ## ----cross-validating-dctms, fig.width=9, fig.height=4.05, eval=!ATMonly------
 R> cv_deep <- cv(m_deep, epochs = 50, cv_folds = 5, batch_size = 64)
 Fitting Fold  1  ... 
-Done in 4.01  mins 
+Done in 4.98  mins 
 Fitting Fold  2  ... 
-Done in 4.26  mins 
+Done in 4.78  mins 
 Fitting Fold  3  ... 
-Done in 3.84  mins 
+Done in 4.29  mins 
 Fitting Fold  4  ... 
-Done in 4.27  mins 
+Done in 4.14  mins 
 Fitting Fold  5  ... 
 Done in 4.48  mins 
 R> pdf(file.path(outdir, "cross-validating-dctms.pdf"), height = 4.5, width = 9)
@@ -380,14 +384,14 @@ R> mods <- list("unconditional" = m_0, "tabular only" = m_tab,
 +               "text only" = m_text, "semi-structured" = m_semi)
 R> do.call("cbind", lapply(mods, bci))
     unconditional tabular only text only semi-structured
-nll         0.531        0.516     0.436           0.423
+nll         0.531        0.516     0.435           0.422
 lwr         0.501        0.486     0.389           0.371
-upr         0.562        0.549     0.485           0.478
+upr         0.562        0.549     0.483           0.477
 R> 
 R> c("tabular only" = unlist(unname(coef(m_tab))),
 +    "semi-structured" = unlist(unname(coef(m_semi))))
    tabular only semi-structured 
-         -0.430          -0.318 
+         -0.430          -0.315 
 R> 
 R> 
 R> ## ----embedding-pca-plot-------------------------------------------------------
@@ -478,7 +482,7 @@ R> ## ----formula-interface_ATM-------------------------------------------------
 R> lags <- c(paste0("y_lag_", 1:p, collapse = "+"))
 R> (fm_atm <- as.formula(paste0("y |", lags, "~ 0 + month + atplag(1:p)")))
 y | y_lag_1 + y_lag_2 + y_lag_3 ~ 0 + month + atplag(1:p)
-R> (fm_atp <- as.formula(paste0("y ~ 0 + month + atplag(1:p)")))
+R> (fm_atp <- y ~ 0 + month + atplag(1:p))
 y ~ 0 + month + atplag(1:p)
 R> (fm_colr <- as.formula(paste0("y ~ 0 + month + ", lags)))
 y ~ 0 + month + y_lag_1 + y_lag_2 + y_lag_3
@@ -504,20 +508,20 @@ R> lapply(mods, \(m) {
 [[1]]
 
 Final epoch (plot to see history):
-loss: 1.471
-  lr: 0.00000177 
+loss: 1.47
+  lr: 0.000008595 
 
 [[2]]
 
 Final epoch (plot to see history):
-loss: 1.612
-  lr: 0.00000177 
+loss: 1.613
+  lr: 0.000002185 
 
 [[3]]
 
 Final epoch (plot to see history):
-loss: 1.489
-  lr: 0.000001966 
+loss: 1.486
+  lr: 0.00000177 
 
 R> 
 R> 
@@ -530,7 +534,7 @@ R> structure(unlist(c(lapply(mods[1:2], logLik, newdata = ndl),
 +                     lapply(mods[3], logLik, newdata = ndl_lag))), names = c(
 +    "ATM", paste0("AT(", p, ")"), "Colr"))
   ATM AT(3)  Colr 
--19.4 -22.5 -20.1 
+-19.2 -22.5 -20.0 
 R> 
 R> 
 R> ## ----in_sample_cond_densities_ATMs--------------------------------------------
@@ -716,7 +720,7 @@ R> fit(m, batch_size = n, epochs = 5e3, validation_split = NULL,
 +      verbose = FALSE)
 R> abs(unlist(coef(m)) - coef(Lm(y ~ x, data = d)))
      x 
-0.0237 
+0.0245 
 R> 
 R> 
 R> ## ----alternative-interface, eval=!ATMonly-------------------------------------
@@ -727,10 +731,8 @@ R> ontram(response = ~ Y, intercept = ~ X, shift = ~ 0 + s(Z, df = 3),
 	 Untrained ordinal outcome deep conditional transformation model
 
 Call:
-deeptrafo(formula = fml, data = data, response_type = response_type, 
-    order = order, addconst_interaction = addconst_interaction, 
-    latent_distr = latent_distr, monitor_metrics = monitor_metrics, 
-    trafo_options = trafo_options)
+ontram(response = ~Y, intercept = ~X, shift = ~0 + s(Z, df = 3), 
+    data = dord)
 
 Interacting:  Y | X 
 
@@ -742,6 +744,83 @@ s(Z, df = 3)1 s(Z, df = 3)2 s(Z, df = 3)3 s(Z, df = 3)4 s(Z, df = 3)5
 s(Z, df = 3)6 s(Z, df = 3)7 s(Z, df = 3)8 s(Z, df = 3)9 
       -0.5447        0.6729        0.7376        0.0947 
 R> 
+R> ## ----word2vec-----------------------------------------------------------------
+R> 
+R> ### Load embedding
+R> embedding_dim <- 300
+R> 
+R> if (file.exists("word2vec_embd_matrix.RDS")) {
++  
++    embedding_matrix <- readRDS("word2vec_embd_matrix.RDS")
++    vocab_size <- nrow(embedding_matrix)
++  
++  } else {
++  
++    # py_install(packages = "gensim")
++    gensim <- import("gensim")
++    # download embedding
++    # https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing
++    model <- gensim$models$KeyedVectors$load_word2vec_format(
++      "../Data/GoogleNews-vectors-negative300.bin", binary = TRUE)
++  
++    vocab_size <- length(words$word)
++    embedding_matrix <- matrix(0, nrow = vocab_size, ncol = embedding_dim)
++  
++    names_model <- names(model$key_to_index)
++    for (i in 1:vocab_size) {
++      word <- words$word[i]
++      if (word %in% names_model) {
++        embedding_matrix[i, ] <- model[[word]]
++      }
++    }
++    saveRDS(embedding_matrix, file = "word2vec_embd_matrix.RDS")
++  
++  }
+R> 
+R> ### Shallow
+R> w2v_mod <- function(x) x |>
++    layer_embedding(input_dim = vocab_size, output_dim = embedding_dim,
++                    weights = list(embedding_matrix), trainable = FALSE) |>
++    layer_flatten() |>
++    layer_dense(units = 1)
+R> 
+R> fm_w2v <- action ~ 0 + shallow(texts)
+R> m_w2v <- deeptrafo(fm_w2v, data = train,
++                     list_of_deep_models = list(shallow = w2v_mod),
++                     optimizer = optimizer_adam(learning_rate = 1e-5))
+R> 
+R> dhist <- fit(m_w2v, epochs = 200, validation_split = 0.1, batch_size = 32,
++               callbacks = list(callback_early_stopping(patience = 5)),
++               verbose = FALSE)
+R> 
+R> bci(m_w2v)
+  nll   lwr   upr 
+0.523 0.494 0.553 
+R> 
+R> ### Deep
+R> w2v2_mod <- function(x) x |>
++    layer_embedding(input_dim = vocab_size, output_dim = embedding_dim,
++                    weights = list(embedding_matrix), trainable = FALSE) |>
++    layer_conv_1d(filters = 128, kernel_size = 5, activation = "relu") |>
++    layer_max_pooling_1d(pool_size = 5) |>
++    layer_conv_1d(filters = 128, kernel_size = 5, activation = "relu") |>
++    layer_global_max_pooling_1d() |>
++    layer_dense(units = 128, activation = "relu") |>
++    layer_dropout(rate = 0.5) |>
++    layer_dense(units = 1, activation = "sigmoid")
+R> 
+R> fm_w2v2 <- action ~ 0 + deep(texts)
+R> m_w2v2 <- deeptrafo(fm_w2v2, data = train,
++                      list_of_deep_models = list(deep = w2v2_mod),
++                      optimizer = optimizer_adam(learning_rate = 1e-5))
+R> 
+R> dhist <- fit(m_w2v2, epochs = 200, validation_split = 0.1, batch_size = 32,
++               callbacks = list(callback_early_stopping(patience = 5)),
++               verbose = FALSE)
+R> 
+R> bci(m_w2v2)
+  nll   lwr   upr 
+0.510 0.486 0.534 
 R> 
 R> ## ----large-factor-models------------------------------------------------------
 R> set.seed(0)
@@ -758,10 +837,10 @@ R> fit(m, batch_size = 1e4, epochs = 20, validation_split = 0, callbacks = list(
 R> bl <- unlist(coef(m, which = "interacting"))
 R> - (unlist(coef(m))[1:5] + bl[1]) / bl[2]
 fac(X)1 fac(X)2 fac(X)3 fac(X)4 fac(X)5 
--0.0203  0.9989 -1.0158 -0.0250  0.0477 
+-0.0204  0.9987 -1.0157 -0.0250  0.0477 
 R> logLik(m, batch_size = 1e4, convert_fun = \(x) - mean(x))
 [1] -1.42
 R> 
 > proc.time()
    user  system elapsed 
-  10282    1275    3138 
+  15138    1511    4131 
